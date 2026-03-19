@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Exam Check In Prototype</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --danger: #dc2626;
+      --warning: #f59e0b;
+      --success: #16a34a;
+      --line: #334155;
+      --soft: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100%;
+    }
+
+    body {
+      padding: 14px;
+    }
+
+    .app {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      line-height: 1.2;
+    }
+
+    h1 { font-size: 1.8rem; margin-bottom: 8px; }
+    h2 { font-size: 1.2rem; margin-bottom: 10px; }
+    h3 { font-size: 1rem; margin-bottom: 8px; }
+
+    .muted { color: var(--muted); }
+    .tiny { font-size: 0.85rem; color: var(--soft); }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    input, select, button, textarea {
+      font: inherit;
+    }
+
+    input[type="file"], input[type="text"], input[type="number"], input[type="datetime-local"], select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 52px;
+      transition: transform 0.12s ease, opacity 0.12s ease, background 0.12s ease;
+    }
+
+    button:hover { background: var(--accent-2); }
+    button:active { transform: scale(0.98); }
+    button.secondary { background: #475569; }
+    button.secondary:hover { background: #334155; }
+    button.warning { background: var(--warning); color: #111827; }
+    button.danger { background: var(--danger); }
+    button.success { background: var(--success); }
+    button.full { width: 100%; }
+    button.big { min-height: 68px; font-size: 1.1rem; }
+
+    .toolbar, .grid2, .grid3, .action-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .students-header {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .student-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .student-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .student-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #1e293b;
+      border: 1px solid var(--line);
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+
+    .pill.alert { background: rgba(245, 158, 11, 0.18); border-color: #f59e0b; }
+    .pill.red { background: rgba(220, 38, 38, 0.18); border-color: #ef4444; }
+    .pill.green { background: rgba(22, 163, 74, 0.18); border-color: #22c55e; }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .meta-box {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .meta-box .label {
+      font-size: 0.8rem;
+      color: var(--soft);
+      margin-bottom: 5px;
+    }
+
+    .meta-box .value {
+      font-size: 1rem;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .alert-banner {
+      padding: 14px;
+      border-radius: 14px;
+      font-weight: 700;
+      display: none;
+      text-align: center;
+    }
+
+    .alert-banner.show {
+      display: block;
+      animation: blink 1s linear infinite;
+    }
+
+    .alert-banner.ten { background: rgba(245, 158, 11, 0.18); border: 2px solid #f59e0b; color: #fde68a; }
+    .alert-banner.one { background: rgba(220, 38, 38, 0.18); border: 2px solid #ef4444; color: #fecaca; }
+    .alert-banner.break { background: rgba(37, 99, 235, 0.18); border: 2px solid #60a5fa; color: #dbeafe; }
+
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.35; }
+    }
+
+    .history {
+      max-height: 160px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: #0b1220;
+    }
+
+    .history-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #1e293b;
+      font-size: 0.92rem;
+    }
+
+    .history-item:last-child { border-bottom: 0; }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--soft);
+      font-size: 0.88rem;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 1fr; }
+      .meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 10px; }
+      .grid2, .grid3, .action-grid, .meta-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 1.45rem; }
+      .student-card { padding: 14px; }
+      button.big { min-height: 76px; font-size: 1.15rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <h1>Exam Check In</h1>
+      <p class="muted">Responsive browser prototype for exam check in, timing, breaks, alerts, and finish workflow.</p>
+
+      <h2>1. Load data</h2>
+      <label for="csvFile">Upload CSV file</label>
+      <input id="csvFile" type="file" accept=".csv" />
+      <button id="loadSampleBtn" class="full secondary">Load built in sample data</button>
+      <button id="downloadTemplateBtn" class="full">Download CSV template</button>
+
+      <div class="footer-note">
+        Required columns:<br>
+        student_id, student_name, seat, professor, course_code, lecture_section, exam_minutes, scheduled_start, break_type, break_allowance_minutes, arrival_time
+      </div>
+
+      <h2 style="margin-top:18px;">2. Search</h2>
+      <label for="searchInput">Find by name, seat, course, or professor</label>
+      <input id="searchInput" type="text" placeholder="Type to filter students" />
+
+      <h2>3. Session controls</h2>
+      <div class="grid2">
+        <button id="saveBtn" class="secondary full">Save browser data</button>
+        <button id="resetBtn" class="danger full">Reset all session data</button>
+      </div>
+
+      <h2 style="margin-top:18px;">Notes</h2>
+      <div class="tiny">
+        Cumulative breaks use one shared pool of minutes for the whole exam.<br><br>
+        Per hour breaks regenerate based on elapsed exam time. Example: 10 minutes per hour means a student can use 10 minutes in the first hour, 20 minutes by the two hour mark, and so on.
+      </div>
+    </aside>
+
+    <main class="panel">
+      <div class="students-header">
+        <div>
+          <h2 style="margin-bottom:4px;">Students</h2>
+          <div id="summaryText" class="muted">No student data loaded yet.</div>
+        </div>
+      </div>
+
+      <div id="studentList" class="student-list"></div>
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'exam_checkin_prototype_v1';
+
+    const SAMPLE_CSV = `student_id,student_name,seat,professor,course_code,lecture_section,exam_minutes,scheduled_start,break_type,break_allowance_minutes,arrival_time
+1001,Amina Yusuf,A12,Dr. Chen,SOC101,L0101,120,2026-03-19T09:00,cumulative,20,2026-03-19T09:04
+1002,Marcus Brown,B03,Prof. Lee,PSY201,L0201,180,2026-03-19T09:00,per_hour,10,2026-03-19T09:00
+1003,Sophia Patel,C08,Dr. Singh,STA220,L5101,90,2026-03-19T09:30,none,0,2026-03-19T09:30`;
+
+    let students = [];
+    let activeBreakTimers = {};
+
+    const csvFile = document.getElementById('csvFile');
+    const loadSampleBtn = document.getElementById('loadSampleBtn');
+    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+    const searchInput = document.getElementById('searchInput');
+    const saveBtn = document.getElementById('saveBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const studentList = document.getElementById('studentList');
+    const summaryText = document.getElementById('summaryText');
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let value = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && next === '"') {
+            value += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          row.push(value);
+          value = '';
+        } else if ((char === '\n' || char === '\r') && !inQuotes) {
+          if (char === '\r' && next === '\n') i++;
+          row.push(value);
+          if (row.some(cell => cell !== '')) rows.push(row);
+          row = [];
+          value = '';
+        } else {
+          value += char;
+        }
+      }
+
+      if (value.length > 0 || row.length > 0) {
+        row.push(value);
+        if (row.some(cell => cell !== '')) rows.push(row);
+      }
+
+      if (!rows.length) return [];
+      const headers = rows[0].map(h => h.trim());
+      return rows.slice(1).map(cols => {
+        const obj = {};
+        headers.forEach((header, index) => obj[header] = (cols[index] || '').trim());
+        return obj;
+      });
+    }
+
+    function downloadFile(filename, content, type = 'text/plain;charset=utf-8') {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function toTimestamp(value) {
+      if (!value) return null;
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? null : d.getTime();
+    }
+
+    function formatDateTime(ts) {
+      if (!ts) return 'Not set';
+      return new Date(ts).toLocaleString([], {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+      });
+    }
+
+    function formatClock(ms) {
+      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return [hours, minutes, seconds].map((n, i) => i === 0 ? String(n) : String(n).padStart(2, '0')).join(':');
+    }
+
+    function minutesToMs(minutes) {
+      return Number(minutes || 0) * 60 * 1000;
+    }
+
+    function normalizeRecord(record, index) {
+      const scheduledStart = toTimestamp(record.scheduled_start);
+      const arrivalTime = toTimestamp(record.arrival_time);
+      const examMinutes = Number(record.exam_minutes || 0);
+      const breakMinutes = Number(record.break_allowance_minutes || 0);
+      const effectiveStart = arrivalTime || scheduledStart || Date.now();
+
+      return {
+        id: record.student_id || `row_${index + 1}`,
+        student_name: record.student_name || `Student ${index + 1}`,
+        seat: record.seat || '',
+        professor: record.professor || '',
+        course_code: record.course_code || '',
+        lecture_section: record.lecture_section || '',
+        exam_minutes: examMinutes,
+        scheduled_start: scheduledStart,
+        arrival_time: arrivalTime,
+        effective_start: effectiveStart,
+        break_type: (record.break_type || 'none').toLowerCase(),
+        break_allowance_minutes: breakMinutes,
+        status: 'checked_in',
+        started_at: effectiveStart,
+        finished_at: null,
+        current_break_start: null,
+        used_break_ms: 0,
+        break_events: [],
+        alert_10_sent: false,
+        alert_1_sent: false,
+        completion_confirmed: false,
+        completion_notes: '',
+        completion_collected_by: '',
+        completion_materials_returned: '',
+        professor_notified: '',
+        check_in_confirmed: true,
+        original_record: record,
+        history: [
+          `${new Date().toLocaleString()}: Record loaded`
+        ]
+      };
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+      renderStudents();
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      try {
+        students = JSON.parse(raw);
+        return Array.isArray(students);
+      } catch {
+        return false;
+      }
+    }
+
+    function getElapsedExamMs(student) {
+      const endPoint = student.finished_at || Date.now();
+      return Math.max(0, endPoint - student.started_at);
+    }
+
+    function getAllowedBreakMs(student) {
+      if (student.break_type === 'none') return 0;
+      if (student.break_type === 'cumulative') {
+        return minutesToMs(student.break_allowance_minutes);
+      }
+      if (student.break_type === 'per_hour') {
+        const elapsed = getElapsedExamMs(student);
+        const hoursEarned = Math.floor(elapsed / (60 * 60 * 1000)) + 1;
+        return minutesToMs(student.break_allowance_minutes * hoursEarned);
+      }
+      return 0;
+    }
+
+    function getCurrentBreakMs(student) {
+      if (!student.current_break_start) return 0;
+      return Math.max(0, Date.now() - student.current_break_start);
+    }
+
+    function getTotalUsedBreakMs(student) {
+      return student.used_break_ms + getCurrentBreakMs(student);
+    }
+
+    function getRemainingBreakMs(student) {
+      return Math.max(0, getAllowedBreakMs(student) - getTotalUsedBreakMs(student));
+    }
+
+    function getExamEndMs(student) {
+      const base = student.started_at + minutesToMs(student.exam_minutes);
+      return base + getTotalUsedBreakMs(student);
+    }
+
+    function getTimeRemainingMs(student) {
+      if (student.finished_at) return 0;
+      return Math.max(0, getExamEndMs(student) - Date.now());
+    }
+
+    function getBreakStatusText(student) {
+      if (student.break_type === 'none') return 'No breaks';
+      const used = getTotalUsedBreakMs(student);
+      const allowed = getAllowedBreakMs(student);
+      return `${formatClock(used)} used / ${formatClock(allowed)} allowed`;
+    }
+
+    function pushHistory(student, text) {
+      student.history.unshift(`${new Date().toLocaleString()}: ${text}`);
+      student.history = student.history.slice(0, 20);
+    }
+
+    function updateStudent(id, updater) {
+      students = students.map(student => {
+        if (student.id !== id) return student;
+        const clone = structuredClone(student);
+        updater(clone);
+        return clone;
+      });
+      saveState();
+    }
+
+    function startBreak(id) {
+      updateStudent(id, student => {
+        if (student.finished_at) return;
+        if (student.current_break_start) return;
+        if (student.break_type === 'none') {
+          alert('This student has no break allocation.');
+          return;
+        }
+        const remaining = getRemainingBreakMs(student);
+        if (remaining <= 0) {
+          alert('No break time remains right now.');
+          return;
+        }
+        student.current_break_start = Date.now();
+        pushHistory(student, 'Break started');
+      });
+    }
+
+    function endBreak(id) {
+      updateStudent(id, student => {
+        if (!student.current_break_start) return;
+        const duration = Date.now() - student.current_break_start;
+        student.used_break_ms += duration;
+        student.break_events.push({
+          start: student.current_break_start,
+          end: Date.now(),
+          duration_ms: duration
+        });
+        student.current_break_start = null;
+        pushHistory(student, `Break ended after ${formatClock(duration)}`);
+      });
+    }
+
+    function finishExam(id) {
+      const ok = confirm('Confirm that this student has finished the exam?');
+      if (!ok) return;
+      updateStudent(id, student => {
+        if (student.current_break_start) {
+          const duration = Date.now() - student.current_break_start;
+          student.used_break_ms += duration;
+          student.break_events.push({
+            start: student.current_break_start,
+            end: Date.now(),
+            duration_ms: duration
+          });
+          student.current_break_start = null;
+        }
+        student.finished_at = Date.now();
+        student.status = 'finished';
+        student.completion_confirmed = true;
+        pushHistory(student, 'Exam finished and confirmed');
+      });
+    }
+
+    function setCompletionField(id, field, value) {
+      updateStudent(id, student => {
+        student[field] = value;
+      });
+    }
+
+    function setArrivalTimeNow(id) {
+      updateStudent(id, student => {
+        const now = Date.now();
+        student.arrival_time = now;
+        student.started_at = now;
+        student.effective_start = now;
+        student.used_break_ms = 0;
+        student.current_break_start = null;
+        student.break_events = [];
+        student.finished_at = null;
+        student.alert_10_sent = false;
+        student.alert_1_sent = false;
+        student.status = 'checked_in';
+        pushHistory(student, 'Arrival time set to now and exam timer reset');
+      });
+    }
+
+    function setScheduledStart(id, newValue) {
+      updateStudent(id, student => {
+        const ts = toTimestamp(newValue);
+        if (!ts) return;
+        student.scheduled_start = ts;
+        if (!student.arrival_time) {
+          student.started_at = ts;
+          student.effective_start = ts;
+        }
+        student.finished_at = null;
+        student.alert_10_sent = false;
+        student.alert_1_sent = false;
+        pushHistory(student, `Scheduled start changed to ${formatDateTime(ts)}`);
+      });
+    }
+
+    function exportSessionCSV() {
+      const headers = [
+        'student_id','student_name','seat','professor','course_code','lecture_section','exam_minutes','scheduled_start','arrival_time','break_type','break_allowance_minutes','status','adjusted_end_time','time_remaining','used_break_time','break_allowed_now','finished_at','completion_notes','completion_collected_by','completion_materials_returned','professor_notified'
+      ];
+
+      const lines = [headers.join(',')];
+      students.forEach(student => {
+        const row = [
+          student.id,
+          student.student_name,
+          student.seat,
+          student.professor,
+          student.course_code,
+          student.lecture_section,
+          student.exam_minutes,
+          student.scheduled_start ? new Date(student.scheduled_start).toISOString() : '',
+          student.arrival_time ? new Date(student.arrival_time).toISOString() : '',
+          student.break_type,
+          student.break_allowance_minutes,
+          student.status,
+          new Date(getExamEndMs(student)).toISOString(),
+          formatClock(getTimeRemainingMs(student)),
+          formatClock(getTotalUsedBreakMs(student)),
+          formatClock(getAllowedBreakMs(student)),
+          student.finished_at ? new Date(student.finished_at).toISOString() : '',
+          student.completion_notes || '',
+          student.completion_collected_by || '',
+          student.completion_materials_returned || '',
+          student.professor_notified || ''
+        ].map(value => `"${String(value).replaceAll('"', '""')}"`);
+        lines.push(row.join(','));
+      });
+
+      downloadFile('exam_session_export.csv', lines.join('\n'), 'text/csv;charset=utf-8');
+    }
+
+    function getFilteredStudents() {
+      const q = searchInput.value.trim().toLowerCase();
+      if (!q) return students;
+      return students.filter(student => {
+        return [student.student_name, student.seat, student.professor, student.course_code, student.lecture_section, student.id]
+          .join(' ')
+          .toLowerCase()
+          .includes(q);
+      });
+    }
+
+    function buildStudentCard(student) {
+      const timeRemaining = getTimeRemainingMs(student);
+      const endTime = getExamEndMs(student);
+      const breakRemaining = getRemainingBreakMs(student);
+      const breakStatus = getBreakStatusText(student);
+      const isOnBreak = !!student.current_break_start;
+      const isFinished = !!student.finished_at;
+      const tenMinuteAlert = !isFinished && timeRemaining <= 10 * 60 * 1000 && timeRemaining > 60 * 1000;
+      const oneMinuteAlert = !isFinished && timeRemaining <= 60 * 1000;
+
+      if (tenMinuteAlert && !student.alert_10_sent) {
+        student.alert_10_sent = true;
+        pushHistory(student, '10 minute remaining alert reached');
+      }
+      if (oneMinuteAlert && !student.alert_1_sent) {
+        student.alert_1_sent = true;
+        pushHistory(student, '1 minute remaining alert reached');
+      }
+
+      const card = document.createElement('div');
+      card.className = 'student-card';
+      card.innerHTML = `
+        <div class="student-top">
+          <div>
+            <h3 style="margin:0 0 6px 0;">${escapeHtml(student.student_name)}</h3>
+            <div class="pill-row">
+              <span class="pill">Seat ${escapeHtml(student.seat || 'Unassigned')}</span>
+              <span class="pill">${escapeHtml(student.course_code || 'No course')}</span>
+              <span class="pill">Section ${escapeHtml(student.lecture_section || 'N/A')}</span>
+              <span class="pill ${isFinished ? 'green' : (isOnBreak ? 'alert' : '')}">${isFinished ? 'Finished' : isOnBreak ? 'On break' : 'Active'}</span>
+            </div>
+          </div>
+          <div class="pill-row">
+            <span class="pill">Professor: ${escapeHtml(student.professor || 'N/A')}</span>
+            <span class="pill">ID: ${escapeHtml(student.id)}</span>
+          </div>
+        </div>
+
+        <div class="alert-banner ten ${tenMinuteAlert ? 'show' : ''}">10 minutes remaining. Notify the student now.</div>
+        <div class="alert-banner one ${oneMinuteAlert ? 'show' : ''}">Final 1 minute countdown. Time almost up.</div>
+        <div class="alert-banner break ${isOnBreak ? 'show' : ''}">Break in progress. Break time remaining: ${formatClock(breakRemaining)}</div>
+
+        <div class="meta-grid">
+          <div class="meta-box"><div class="label">Scheduled start</div><div class="value">${formatDateTime(student.scheduled_start)}</div></div>
+          <div class="meta-box"><div class="label">Arrival time</div><div class="value">${formatDateTime(student.arrival_time)}</div></div>
+          <div class="meta-box"><div class="label">Adjusted end time</div><div class="value">${formatDateTime(endTime)}</div></div>
+          <div class="meta-box"><div class="label">Time remaining</div><div class="value">${formatClock(timeRemaining)}</div></div>
+          <div class="meta-box"><div class="label">Exam length</div><div class="value">${student.exam_minutes} min</div></div>
+          <div class="meta-box"><div class="label">Break type</div><div class="value">${escapeHtml(student.break_type)}</div></div>
+          <div class="meta-box"><div class="label">Break status</div><div class="value">${breakStatus}</div></div>
+          <div class="meta-box"><div class="label">Break remaining now</div><div class="value">${formatClock(breakRemaining)}</div></div>
+        </div>
+
+        <div class="action-grid">
+          <button class="success full" data-action="set-arrival">Set arrival to now</button>
+          <button class="secondary full" data-action="export-one">Export record</button>
+          <button class="warning full" data-action="start-break" ${isOnBreak || isFinished ? 'disabled' : ''}>Start break</button>
+          <button class="secondary full" data-action="end-break" ${!isOnBreak ? 'disabled' : ''}>End break</button>
+        </div>
+
+        <button class="danger full big" data-action="finish" ${isFinished ? 'disabled' : ''}>Finish exam</button>
+
+        <div class="grid2">
+          <div>
+            <label>Manual scheduled start edit</label>
+            <input type="datetime-local" data-field="scheduled_start_input" value="${toDateTimeLocalValue(student.scheduled_start)}" />
+          </div>
+          <div>
+            <label>Collected by</label>
+            <input type="text" data-field="completion_collected_by" value="${escapeAttribute(student.completion_collected_by || '')}" placeholder="Invigilator name" />
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label>Materials returned</label>
+            <select data-field="completion_materials_returned">
+              <option value="" ${student.completion_materials_returned === '' ? 'selected' : ''}>Select</option>
+              <option value="Yes" ${student.completion_materials_returned === 'Yes' ? 'selected' : ''}>Yes</option>
+              <option value="No" ${student.completion_materials_returned === 'No' ? 'selected' : ''}>No</option>
+            </select>
+          </div>
+          <div>
+            <label>Professor notified</label>
+            <select data-field="professor_notified">
+              <option value="" ${student.professor_notified === '' ? 'selected' : ''}>Select</option>
+              <option value="Yes" ${student.professor_notified === 'Yes' ? 'selected' : ''}>Yes</option>
+              <option value="No" ${student.professor_notified === 'No' ? 'selected' : ''}>No</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label>Completion notes</label>
+          <textarea rows="3" data-field="completion_notes" placeholder="Add any end of exam notes here">${escapeHtml(student.completion_notes || '')}</textarea>
+        </div>
+
+        <div>
+          <label>History</label>
+          <div class="history">${student.history.map(item => `<div class="history-item">${escapeHtml(item)}</div>`).join('')}</div>
+        </div>
+      `;
+
+      card.querySelector('[data-action="start-break"]').addEventListener('click', () => startBreak(student.id));
+      card.querySelector('[data-action="end-break"]').addEventListener('click', () => endBreak(student.id));
+      card.querySelector('[data-action="finish"]').addEventListener('click', () => finishExam(student.id));
+      card.querySelector('[data-action="set-arrival"]').addEventListener('click', () => setArrivalTimeNow(student.id));
+      card.querySelector('[data-action="export-one"]').addEventListener('click', () => exportOneStudent(student));
+
+      const scheduledStartInput = card.querySelector('[data-field="scheduled_start_input"]');
+      scheduledStartInput.addEventListener('change', e => setScheduledStart(student.id, e.target.value));
+
+      ['completion_collected_by', 'completion_materials_returned', 'professor_notified', 'completion_notes'].forEach(field => {
+        const el = card.querySelector(`[data-field="${field}"]`);
+        el.addEventListener(field === 'completion_notes' ? 'input' : 'change', e => setCompletionField(student.id, field, e.target.value));
+      });
+
+      return card;
+    }
+
+    function exportOneStudent(student) {
+      const content = JSON.stringify({
+        ...student,
+        adjusted_end_time: new Date(getExamEndMs(student)).toISOString(),
+        time_remaining: formatClock(getTimeRemainingMs(student)),
+        used_break_time: formatClock(getTotalUsedBreakMs(student)),
+        allowed_break_time_now: formatClock(getAllowedBreakMs(student))
+      }, null, 2);
+      downloadFile(`${student.student_name.replace(/\s+/g, '_')}_record.json`, content, 'application/json;charset=utf-8');
+    }
+
+    function toDateTimeLocalValue(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value);
+    }
+
+    function renderStudents() {
+      const filtered = getFilteredStudents();
+      studentList.innerHTML = '';
+      summaryText.textContent = students.length
+        ? `${filtered.length} of ${students.length} students shown`
+        : 'No student data loaded yet.';
+
+      if (!filtered.length) {
+        const empty = document.createElement('div');
+        empty.className = 'student-card';
+        empty.innerHTML = '<div class="muted">No matching students found.</div>';
+        studentList.appendChild(empty);
+        return;
+      }
+
+      filtered.forEach(student => studentList.appendChild(buildStudentCard(student)));
+    }
+
+    function loadRecords(records) {
+      students = records.map(normalizeRecord);
+      saveState();
+    }
+
+    function refreshAlertsAndTime() {
+      if (!students.length) return;
+      let changed = false;
+      students.forEach(student => {
+        if (student.finished_at) return;
+        const remaining = getTimeRemainingMs(student);
+        if (remaining <= 10 * 60 * 1000 && !student.alert_10_sent) {
+          student.alert_10_sent = true;
+          pushHistory(student, '10 minute remaining alert reached');
+          changed = true;
+        }
+        if (remaining <= 60 * 1000 && !student.alert_1_sent) {
+          student.alert_1_sent = true;
+          pushHistory(student, '1 minute remaining alert reached');
+          changed = true;
+        }
+      });
+      if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+      renderStudents();
+    }
+
+    csvFile.addEventListener('change', async e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      const records = parseCSV(text);
+      if (!records.length) {
+        alert('No valid CSV rows were found.');
+        return;
+      }
+      loadRecords(records);
+    });
+
+    loadSampleBtn.addEventListener('click', () => {
+      loadRecords(parseCSV(SAMPLE_CSV));
+    });
+
+    downloadTemplateBtn.addEventListener('click', () => {
+      downloadFile('exam_checkin_template.csv', SAMPLE_CSV, 'text/csv;charset=utf-8');
+    });
+
+    searchInput.addEventListener('input', renderStudents);
+    saveBtn.addEventListener('click', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+      alert('Session data saved in this browser.');
+    });
+
+    resetBtn.addEventListener('click', () => {
+      const ok = confirm('This will erase all saved session data in this browser. Continue?');
+      if (!ok) return;
+      localStorage.removeItem(STORAGE_KEY);
+      students = [];
+      renderStudents();
+    });
+
+    const exportAllBtn = document.createElement('button');
+    exportAllBtn.textContent = 'Export session CSV';
+    exportAllBtn.className = 'full success';
+    exportAllBtn.addEventListener('click', exportSessionCSV);
+    document.querySelector('aside.panel').appendChild(exportAllBtn);
+
+    if (!loadState()) {
+      renderStudents();
+    } else {
+      renderStudents();
+    }
+
+    setInterval(refreshAlertsAndTime, 1000);
+  </script>
+</body>
+</html>
