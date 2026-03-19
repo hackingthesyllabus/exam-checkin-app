@@ -15,7 +15,6 @@
       --soft: #94a3b8;
       --line: #334155;
       --accent: #2563eb;
-      --accent-2: #1d4ed8;
       --success: #16a34a;
       --warning: #f59e0b;
       --danger: #dc2626;
@@ -107,6 +106,11 @@
       transform: scale(0.98);
     }
 
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
     .primary-btn { background: var(--accent); }
     .secondary-btn { background: #475569; }
     .danger-btn { background: var(--danger); }
@@ -138,7 +142,7 @@
     }
 
     .hero-card {
-      width: min(920px, 100%);
+      width: min(980px, 100%);
       padding: 32px;
       text-align: center;
     }
@@ -210,7 +214,7 @@
     }
 
     .center-stack {
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
     }
 
@@ -219,7 +223,8 @@
     .student-list,
     .stats-grid,
     .card-actions,
-    .detail-grid {
+    .detail-grid,
+    .toolbar {
       display: grid;
       gap: 14px;
     }
@@ -230,6 +235,7 @@
     .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .card-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     label {
       display: block;
@@ -425,12 +431,23 @@
       line-height: 1.4;
     }
 
+    .status-box {
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #0f172a;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
     @media (max-width: 960px) {
       .hero-grid,
       .grid3,
       .stats-grid,
       .detail-grid,
-      .card-actions {
+      .card-actions,
+      .toolbar {
         grid-template-columns: 1fr;
       }
 
@@ -468,8 +485,13 @@
         <div class="hero-card">
           <h2>Exam room workflow</h2>
           <p>
-            This version starts with a centered landing page and a simple sequence. Choose check in, check out, or view students. Five hypothetical students are already loaded so you can test the flow immediately.
+            This version loads students from a separate CSV file called <strong>students.csv</strong>. Edit that file in GitHub, refresh the page, and your student list updates without changing the app code.
           </p>
+          <div id="dataStatusHome" class="status-box">Loading student data...</div>
+          <div class="toolbar" style="max-width:520px; margin:0 auto 18px auto;">
+            <button id="reloadCsvBtnHome" class="primary-btn">Reload CSV</button>
+            <button id="clearSessionBtnHome" class="danger-btn">Clear saved session</button>
+          </div>
           <div class="hero-grid">
             <div class="hero-action">
               <h3>Check In</h3>
@@ -495,6 +517,7 @@
       <div class="panel center-stack">
         <h2 class="section-title">Check In</h2>
         <p class="section-subtitle">Step 1. Choose the student. Step 2. Check them in now or set a custom arrival time.</p>
+        <div id="dataStatusCheckin" class="status-box"></div>
 
         <div class="grid2">
           <div>
@@ -517,6 +540,7 @@
       <div class="panel center-stack">
         <h2 class="section-title">Check Out</h2>
         <p class="section-subtitle">Choose a student, confirm that they are done, and record the final handoff details.</p>
+        <div id="dataStatusCheckout" class="status-box"></div>
 
         <div class="grid2">
           <div>
@@ -541,6 +565,7 @@
     <section id="screen-students" class="screen">
       <div class="panel">
         <h2 class="section-title">View Students</h2>
+        <div id="dataStatusStudents" class="status-box"></div>
         <p id="studentSummary" class="summary-line"></p>
 
         <div class="grid3" style="margin-bottom: 14px;">
@@ -559,7 +584,7 @@
             </select>
           </div>
           <div style="display:flex; align-items:end; gap:10px;">
-            <button id="resetSampleBtn" class="secondary-btn" style="width:100%;">Reset sample data</button>
+            <button id="reloadCsvBtnStudents" class="secondary-btn" style="width:100%;">Reload CSV</button>
           </div>
         </div>
 
@@ -569,88 +594,13 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'exam_checkin_prototype_v2';
-
-    const SAMPLE_STUDENTS = [
-      {
-        student_id: '2001',
-        student_name: 'Amina Yusuf',
-        seat: 'A12',
-        professor: 'Dr. Chen',
-        course_code: 'SOC101',
-        lecture_section: 'L0101',
-        exam_minutes: 120,
-        scheduled_start: '2026-03-19T09:00',
-        location: 'AA1120',
-        break_type: 'none',
-        break_allowance_minutes: 0,
-        arrival_time: '',
-        notes: 'No breaks approved.'
-      },
-      {
-        student_id: '2002',
-        student_name: 'Marcus Brown',
-        seat: 'B03',
-        professor: 'Prof. Lee',
-        course_code: 'PSY201',
-        lecture_section: 'L0201',
-        exam_minutes: 180,
-        scheduled_start: '2026-03-19T09:00',
-        location: 'AA1120',
-        break_type: 'per_hour',
-        break_allowance_minutes: 10,
-        arrival_time: '',
-        notes: 'Ten minutes of break per hour.'
-      },
-      {
-        student_id: '2003',
-        student_name: 'Sophia Patel',
-        seat: 'C08',
-        professor: 'Dr. Singh',
-        course_code: 'STA220',
-        lecture_section: 'L5101',
-        exam_minutes: 90,
-        scheduled_start: '2026-03-19T09:30',
-        location: 'AA1120',
-        break_type: 'cumulative',
-        break_allowance_minutes: 15,
-        arrival_time: '',
-        notes: 'Fifteen minutes total break pool.'
-      },
-      {
-        student_id: '2004',
-        student_name: 'Daniela Torres',
-        seat: 'D15',
-        professor: 'Dr. Osei',
-        course_code: 'BIO130',
-        lecture_section: 'L0301',
-        exam_minutes: 240,
-        scheduled_start: '2026-03-19T10:00',
-        location: 'AA1120',
-        break_type: 'cumulative',
-        break_allowance_minutes: 45,
-        arrival_time: '',
-        notes: 'Large cumulative break allocation.'
-      },
-      {
-        student_id: '2005',
-        student_name: 'Ethan Williams',
-        seat: 'E02',
-        professor: 'Prof. Ahmed',
-        course_code: 'ENG150',
-        lecture_section: 'L0401',
-        exam_minutes: 150,
-        scheduled_start: '2026-03-19T10:15',
-        location: 'AA1120',
-        break_type: 'cumulative',
-        break_allowance_minutes: 5,
-        arrival_time: '',
-        notes: 'Very limited cumulative break.'
-      }
-    ];
+    const STORAGE_KEY = 'exam_checkin_prototype_v3';
+    const CSV_PATH = 'students.csv';
 
     let students = [];
     let selectedCheckinId = null;
+    let csvLoaded = false;
+    let lastDataMessage = 'Loading student data...';
 
     const screens = {
       home: document.getElementById('screen-home'),
@@ -672,7 +622,77 @@
     const studentStatusFilter = document.getElementById('studentStatusFilter');
     const studentList = document.getElementById('studentList');
     const studentSummary = document.getElementById('studentSummary');
-    const resetSampleBtn = document.getElementById('resetSampleBtn');
+
+    const dataStatusHome = document.getElementById('dataStatusHome');
+    const dataStatusCheckin = document.getElementById('dataStatusCheckin');
+    const dataStatusCheckout = document.getElementById('dataStatusCheckout');
+    const dataStatusStudents = document.getElementById('dataStatusStudents');
+    const reloadCsvBtnHome = document.getElementById('reloadCsvBtnHome');
+    const reloadCsvBtnStudents = document.getElementById('reloadCsvBtnStudents');
+    const clearSessionBtnHome = document.getElementById('clearSessionBtnHome');
+
+    function setDataMessage(message) {
+      lastDataMessage = message;
+      [dataStatusHome, dataStatusCheckin, dataStatusCheckout, dataStatusStudents].forEach(el => {
+        if (el) el.textContent = message;
+      });
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let value = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && next === '"') {
+            value += '"';
+            i += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          row.push(value);
+          value = '';
+        } else if ((char === '
+' || char === '
+') && !inQuotes) {
+          if (char === '
+' && next === '
+') i += 1;
+          row.push(value);
+          if (row.some(cell => cell !== '')) rows.push(row);
+          row = [];
+          value = '';
+        } else {
+          value += char;
+        }
+      }
+
+      if (value.length || row.length) {
+        row.push(value);
+        if (row.some(cell => cell !== '')) rows.push(row);
+      }
+
+      if (!rows.length) return [];
+
+      const headers = rows[0].map(h => h.trim());
+      return rows.slice(1).map(cols => {
+        const obj = {};
+        headers.forEach((header, index) => {
+          obj[header] = (cols[index] || '').trim();
+        });
+        return obj;
+      });
+    }
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
 
     function toTimestamp(value) {
       if (!value) return null;
@@ -708,20 +728,8 @@
         .replaceAll("'", '&#39;');
     }
 
-    function toDateTimeLocalValue(ts) {
-      if (!ts) return '';
-      const d = new Date(ts);
-      const pad = n => String(n).padStart(2, '0');
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
-
-    function clone(value) {
-      return JSON.parse(JSON.stringify(value));
-    }
-
     function normalizeRecord(record, index) {
       const scheduledStart = toTimestamp(record.scheduled_start);
-      const arrivalTime = toTimestamp(record.arrival_time);
       return {
         id: record.student_id || `row_${index + 1}`,
         student_name: record.student_name || `Student ${index + 1}`,
@@ -731,13 +739,13 @@
         lecture_section: record.lecture_section || '',
         exam_minutes: Number(record.exam_minutes || 0),
         scheduled_start: scheduledStart,
-        arrival_time: arrivalTime,
+        arrival_time: null,
         location: record.location || '',
         break_type: (record.break_type || 'none').toLowerCase(),
         break_allowance_minutes: Number(record.break_allowance_minutes || 0),
         notes: record.notes || '',
-        status: arrivalTime ? 'checked_in' : 'not_checked_in',
-        started_at: arrivalTime || null,
+        status: 'not_checked_in',
+        started_at: null,
         finished_at: null,
         current_break_start: null,
         used_break_ms: 0,
@@ -749,7 +757,7 @@
         completion_materials_returned: '',
         professor_notified: '',
         history: [
-          `${new Date().toLocaleString()}: Student record loaded`
+          `${new Date().toLocaleString()}: Student record loaded from CSV`
         ]
       };
     }
@@ -758,24 +766,97 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
     }
 
-    function loadState() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return false;
-      try {
-        const parsed = JSON.parse(raw);
-        if (!Array.isArray(parsed)) return false;
-        students = parsed;
-        return true;
-      } catch {
-        return false;
-      }
-    }
-
-    function loadSampleStudents() {
-      students = SAMPLE_STUDENTS.map(normalizeRecord);
-      selectedCheckinId = students[0]?.id || null;
+    function clearSession() {
+      localStorage.removeItem(STORAGE_KEY);
+      students = students.map(student => ({
+        ...student,
+        arrival_time: null,
+        status: 'not_checked_in',
+        started_at: null,
+        finished_at: null,
+        current_break_start: null,
+        used_break_ms: 0,
+        break_events: [],
+        alert_10_sent: false,
+        alert_1_sent: false,
+        completion_notes: '',
+        completion_collected_by: '',
+        completion_materials_returned: '',
+        professor_notified: '',
+        history: [`${new Date().toLocaleString()}: Session cleared and student reset`]
+      }));
       saveState();
       renderAll();
+    }
+
+    function mergeSavedState(csvStudents, savedStudents) {
+      const savedMap = new Map(savedStudents.map(student => [student.id, student]));
+      return csvStudents.map(csvStudent => {
+        const saved = savedMap.get(csvStudent.id);
+        if (!saved) return csvStudent;
+
+        return {
+          ...csvStudent,
+          arrival_time: saved.arrival_time || null,
+          status: saved.status || 'not_checked_in',
+          started_at: saved.started_at || null,
+          finished_at: saved.finished_at || null,
+          current_break_start: saved.current_break_start || null,
+          used_break_ms: saved.used_break_ms || 0,
+          break_events: Array.isArray(saved.break_events) ? saved.break_events : [],
+          alert_10_sent: !!saved.alert_10_sent,
+          alert_1_sent: !!saved.alert_1_sent,
+          completion_notes: saved.completion_notes || '',
+          completion_collected_by: saved.completion_collected_by || '',
+          completion_materials_returned: saved.completion_materials_returned || '',
+          professor_notified: saved.professor_notified || '',
+          history: Array.isArray(saved.history) && saved.history.length ? saved.history : csvStudent.history
+        };
+      });
+    }
+
+    async function loadStudentsFromCsv() {
+      setDataMessage('Loading student data from students.csv ...');
+      try {
+        const response = await fetch(`${CSV_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Could not load ${CSV_PATH}. Status ${response.status}`);
+        }
+
+        const text = await response.text();
+        const records = parseCSV(text);
+        if (!records.length) {
+          throw new Error('students.csv loaded but appears empty.');
+        }
+
+        const csvStudents = records.map(normalizeRecord);
+        const savedRaw = localStorage.getItem(STORAGE_KEY);
+        if (savedRaw) {
+          try {
+            const savedStudents = JSON.parse(savedRaw);
+            if (Array.isArray(savedStudents)) {
+              students = mergeSavedState(csvStudents, savedStudents);
+            } else {
+              students = csvStudents;
+            }
+          } catch {
+            students = csvStudents;
+          }
+        } else {
+          students = csvStudents;
+        }
+
+        csvLoaded = true;
+        selectedCheckinId = students[0]?.id || null;
+        saveState();
+        setDataMessage(`Loaded ${students.length} students from students.csv`);
+        renderAll();
+      } catch (error) {
+        csvLoaded = false;
+        students = [];
+        setDataMessage(error.message);
+        renderAll();
+      }
     }
 
     function getStudentById(id) {
@@ -873,6 +954,12 @@
     }
 
     function renderCheckin() {
+      if (!students.length) {
+        checkinStudentList.innerHTML = '<div class="empty-state">No students loaded. Check students.csv and reload.</div>';
+        checkinDetails.innerHTML = '<div class="empty-state">Student details will appear here after the CSV loads.</div>';
+        return;
+      }
+
       const query = checkinSearch.value.trim().toLowerCase();
       const filtered = students.filter(student => {
         const hay = [student.student_name, student.seat, student.course_code, student.professor].join(' ').toLowerCase();
@@ -1030,6 +1117,11 @@
     }
 
     function renderCheckout() {
+      if (!students.length) {
+        checkoutStudentList.innerHTML = '<div class="empty-state">No students loaded. Check students.csv and reload.</div>';
+        return;
+      }
+
       const filtered = getFilteredCheckoutStudents();
       checkoutStudentList.innerHTML = '';
 
@@ -1118,6 +1210,12 @@
     }
 
     function renderStudentsView() {
+      if (!students.length) {
+        studentSummary.textContent = '0 students loaded';
+        studentList.innerHTML = '<div class="empty-state">No students loaded. Check students.csv and reload.</div>';
+        return;
+      }
+
       const filtered = getFilteredStudentsView();
       studentSummary.textContent = `${filtered.length} of ${students.length} students shown`;
       studentList.innerHTML = '';
@@ -1189,6 +1287,7 @@
     }
 
     function renderAll() {
+      setDataMessage(lastDataMessage);
       renderCheckin();
       renderCheckout();
       renderStudentsView();
@@ -1225,19 +1324,15 @@
     checkoutFilter.addEventListener('change', renderCheckout);
     studentSearch.addEventListener('input', renderStudentsView);
     studentStatusFilter.addEventListener('change', renderStudentsView);
-    resetSampleBtn.addEventListener('click', () => {
-      const ok = confirm('Reset all data and restore the five hypothetical students?');
+    reloadCsvBtnHome.addEventListener('click', loadStudentsFromCsv);
+    reloadCsvBtnStudents.addEventListener('click', loadStudentsFromCsv);
+    clearSessionBtnHome.addEventListener('click', () => {
+      const ok = confirm('Clear the saved session data and reset all students to not checked in?');
       if (!ok) return;
-      loadSampleStudents();
+      clearSession();
     });
 
-    if (!loadState()) {
-      loadSampleStudents();
-    } else {
-      selectedCheckinId = students[0]?.id || null;
-      renderAll();
-    }
-
+    loadStudentsFromCsv();
     setInterval(tick, 1000);
   </script>
 </body>
