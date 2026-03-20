@@ -612,14 +612,9 @@
     }
 
     function renderCheckinArrivalStep(student){
-      const pending = student.checkin.pending_checkin_time || "";
       const late = student.checkin.late;
       const showOther = student.checkin.late_reason === "Other";
-      const pendingTs = toTimestamp(pending) || Date.now();
-      const lateByClock = !!student.scheduled_start && pendingTs > student.scheduled_start;
-      const previewStart = (!late ? (student.scheduled_start ? Math.max(pendingTs, student.scheduled_start) : pendingTs) :
-        (student.checkin.justified_late === "yes" ? pendingTs : (student.scheduled_start || pendingTs)));
-      const previewEnd = previewStart + minutesToMs(student.exam_minutes);
+      const arrivalPreview = student.arrival_time ? formatDateTime(student.arrival_time) : "Will be recorded when you press Save Arrival and Continue";
 
       checkinStepContent.innerHTML = `
         <div class="wizard-card">
@@ -628,48 +623,35 @@
             <div class="stat-box"><div class="label">Student</div><div class="value">${escapeHtml(student.student_name)}</div></div>
             <div class="stat-box"><div class="label">Course</div><div class="value">${escapeHtml(student.course_code)}</div></div>
             <div class="stat-box"><div class="label">Scheduled start</div><div class="value">${formatDateTime(student.scheduled_start)}</div></div>
-            <div class="stat-box"><div class="label">Exam length</div><div class="value">${student.exam_minutes} min</div></div>
-          </div>
-
-          <div class="grid2" style="margin-top:14px;">
-            <button id="arrivalNowBtn" class="action-btn primary" type="button">Use Current Time</button>
-            <div>
-              <label for="pendingCheckinTime">Check in time</label>
-              <input id="pendingCheckinTime" class="large" type="datetime-local" value="${escapeHtml(pending)}" />
-            </div>
+            <div class="stat-box"><div class="label">Arrival time</div><div class="value">${arrivalPreview}</div></div>
           </div>
 
           <div style="margin-top:14px;">
-            <label>Late status</label>
+            <label>Arrival status</label>
             <div class="grid2">
-              <button id="lateNoBtn" class="choice-btn ${!late ? "active" : ""}" type="button">Not Late</button>
+              <button id="lateNoBtn" class="choice-btn ${!late ? "active" : ""}" type="button">On Time</button>
               <button id="lateYesBtn" class="choice-btn ${late ? "active" : ""}" type="button">Late</button>
             </div>
           </div>
 
           <div id="lateFieldsWrap" style="margin-top:14px; ${late ? "" : "display:none;"}">
-            <div class="detail-grid">
-              <div>
-                <label for="lateReasonSelect">Late reason</label>
-                <select id="lateReasonSelect" class="large">
-                  <option value="">Select</option>
-                  <option value="Traffic" ${student.checkin.late_reason === "Traffic" ? "selected" : ""}>Traffic</option>
-                  <option value="Forgot the time" ${student.checkin.late_reason === "Forgot the time" ? "selected" : ""}>Forgot the time</option>
-                  <option value="Could not find the room" ${student.checkin.late_reason === "Could not find the room" ? "selected" : ""}>Could not find the room</option>
-                  <option value="Disability related" ${student.checkin.late_reason === "Disability related" ? "selected" : ""}>Disability related</option>
-                  <option value="Needed more time to study" ${student.checkin.late_reason === "Needed more time to study" ? "selected" : ""}>Needed more time to study</option>
-                  <option value="Other" ${student.checkin.late_reason === "Other" ? "selected" : ""}>Other</option>
-                </select>
-              </div>
-              <div>
-                <label for="justifiedLateSelect">Justified late arrival</label>
-                <select id="justifiedLateSelect" class="large">
-                  <option value="">Select</option>
-                  <option value="yes" ${student.checkin.justified_late === "yes" ? "selected" : ""}>Yes</option>
-                  <option value="no" ${student.checkin.justified_late === "no" ? "selected" : ""}>No</option>
-                </select>
+            <div>
+              <label>Late reason</label>
+              <div class="grid3" id="lateReasonButtons">
+                ${["Traffic","Forgot the time","Could not find the room","Disability related","Needed more time to study","Other"].map(reason => `
+                  <button type="button" class="choice-btn ${student.checkin.late_reason === reason ? "active" : ""}" data-late-reason="${reason}">${reason}</button>
+                `).join("")}
               </div>
             </div>
+
+            <div style="margin-top:14px;">
+              <label>Justified late arrival</label>
+              <div class="grid2">
+                <button id="justifiedYesBtn" type="button" class="choice-btn ${student.checkin.justified_late === "yes" ? "active" : ""}">Yes</button>
+                <button id="justifiedNoBtn" type="button" class="choice-btn ${student.checkin.justified_late === "no" ? "active" : ""}">No</button>
+              </div>
+            </div>
+
             <div id="lateOtherWrap" style="margin-top:14px; ${showOther ? "" : "display:none;"}">
               <label for="lateOtherInput">Other reason</label>
               <input id="lateOtherInput" class="large" type="text" value="${escapeHtml(student.checkin.late_other_text)}" />
@@ -681,26 +663,19 @@
             <textarea id="invigilatorNotesInput" class="large">${escapeHtml(student.checkin.invigilator_notes)}</textarea>
           </div>
 
-          <div class="stats" style="margin-top:14px;">
-            <div class="stat-box"><div class="label">Late by clock</div><div class="value">${lateByClock ? "Yes" : "No"}</div></div>
-            <div class="stat-box"><div class="label">Preview start</div><div class="value">${formatDateTime(previewStart)}</div></div>
-            <div class="stat-box"><div class="label">Preview end</div><div class="value">${formatDateTime(previewEnd)}</div></div>
-            <div class="stat-box"><div class="label">Breaks</div><div class="value">${escapeHtml(describeBreak(student))}</div></div>
+          <div class="script-box" style="margin-top:14px;">
+            <p><strong>How timing works:</strong></p>
+            <p>If the student is on time, arrival is recorded now and the actual exam start time will be set after signature so they still receive full exam time.</p>
+            <p>If the student is late and justified, the actual exam start time will also be set after signature so they still receive full exam time.</p>
+            <p>If the student is late and not justified, the exam time will count from the scheduled start time, so lateness reduces total remaining time.</p>
           </div>
 
           <div class="grid2" style="margin-top:14px;">
             <button id="backToSelectBtn" class="action-btn gray" type="button">Back to Student List</button>
-            <button id="saveArrivalBtn" class="action-btn green" type="button">Save Arrival and Continue</button>
+            <button id="saveArrivalBtn" class="action-btn green" type="button">Student Arrived, Save and Continue</button>
           </div>
         </div>
       `;
-
-      document.getElementById("arrivalNowBtn").addEventListener("click", e => {
-        withPressedState(e.currentTarget);
-        const now = new Date();
-        const iso = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}T${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
-        document.getElementById("pendingCheckinTime").value = iso;
-      });
 
       document.getElementById("lateNoBtn").addEventListener("click", e => {
         withPressedState(e.currentTarget);
@@ -717,6 +692,34 @@
         updateStudent(student.id, next => { next.checkin.late = true; });
       });
 
+      const lateReasonButtons = document.querySelectorAll("[data-late-reason]");
+      lateReasonButtons.forEach(btn => {
+        btn.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          const selected = e.currentTarget.dataset.lateReason;
+          updateStudent(student.id, next => {
+            next.checkin.late_reason = selected;
+            if(selected !== "Other") next.checkin.late_other_text = "";
+          });
+        });
+      });
+
+      const justifiedYesBtn = document.getElementById("justifiedYesBtn");
+      const justifiedNoBtn = document.getElementById("justifiedNoBtn");
+      if(justifiedYesBtn) justifiedYesBtn.addEventListener("click", e => {
+        withPressedState(e.currentTarget);
+        updateStudent(student.id, next => { next.checkin.justified_late = "yes"; });
+      });
+      if(justifiedNoBtn) justifiedNoBtn.addEventListener("click", e => {
+        withPressedState(e.currentTarget);
+        updateStudent(student.id, next => { next.checkin.justified_late = "no"; });
+      });
+
+      const lateOtherInput = document.getElementById("lateOtherInput");
+      if(lateOtherInput) lateOtherInput.addEventListener("input", e => {
+        updateStudent(student.id, next => { next.checkin.late_other_text = e.target.value; });
+      });
+
       document.getElementById("backToSelectBtn").addEventListener("click", e => {
         withPressedState(e.currentTarget);
         updateStudent(student.id, next => { next.checkin.step = 0; });
@@ -724,38 +727,17 @@
 
       document.getElementById("saveArrivalBtn").addEventListener("click", e => {
         withPressedState(e.currentTarget);
-        const pendingValue = document.getElementById("pendingCheckinTime").value;
         const notes = document.getElementById("invigilatorNotesInput").value;
-        const lateReason = document.getElementById("lateReasonSelect") ? document.getElementById("lateReasonSelect").value : "";
-        const justified = document.getElementById("justifiedLateSelect") ? document.getElementById("justifiedLateSelect").value : "";
-        const otherText = document.getElementById("lateOtherInput") ? document.getElementById("lateOtherInput").value : "";
-        const ts = toTimestamp(pendingValue) || Date.now();
-        const isLate = student.checkin.late || isLateByClock(student, ts);
+        const ts = Date.now();
+        const isLate = student.checkin.late;
 
-        if(isLate && !lateReason){ alert("Select a late reason."); return; }
-        if(isLate && lateReason === "Other" && !String(otherText).trim()){ alert("Enter the other late reason."); return; }
-        if(isLate && !justified){ alert("Select whether the late arrival is justified."); return; }
+        if(isLate && !student.checkin.late_reason){ alert("Select a late reason."); return; }
+        if(isLate && student.checkin.late_reason === "Other" && !String(student.checkin.late_other_text).trim()){ alert("Enter the other late reason."); return; }
+        if(isLate && !student.checkin.justified_late){ alert("Select whether the late arrival is justified."); return; }
 
         updateStudent(student.id, next => {
-          next.checkin.pending_checkin_time = pendingValue;
-          next.checkin.invigilator_notes = notes;
-          next.checkin.late = isLate;
-          next.checkin.late_reason = lateReason;
-          next.checkin.late_other_text = otherText;
-          next.checkin.justified_late = justified;
           next.arrival_time = ts;
-
-          if(!isLate){
-            next.started_at = next.scheduled_start ? Math.max(ts, next.scheduled_start) : ts;
-            next.checkin.confirmed_time_basis = "standard";
-          }else if(justified === "yes"){
-            next.started_at = ts;
-            next.checkin.confirmed_time_basis = "justified_late";
-          }else{
-            next.started_at = next.scheduled_start || ts;
-            next.checkin.confirmed_time_basis = "unjustified_late";
-          }
-
+          next.checkin.invigilator_notes = notes;
           next.finished_at = null;
           next.current_break_start = null;
           next.used_break_ms = 0;
@@ -763,6 +745,18 @@
           next.alert_10_sent = false;
           next.alert_1_sent = false;
           next.break_alert_sent = false;
+
+          if(!next.checkin.late){
+            next.started_at = null;
+            next.checkin.confirmed_time_basis = "start_after_signature_on_time";
+          }else if(next.checkin.justified_late === "yes"){
+            next.started_at = null;
+            next.checkin.confirmed_time_basis = "start_after_signature_justified_late";
+          }else{
+            next.started_at = next.scheduled_start || ts;
+            next.checkin.confirmed_time_basis = "unjustified_late";
+          }
+
           next.checkin.step = 2;
           pushHistory(next, `Arrival saved at ${formatDateTime(ts)}`);
         });
@@ -782,7 +776,7 @@
               <label>Check in summary</label>
               <div class="script-box">
                 <p><strong>Arrival time:</strong> ${formatDateTime(student.arrival_time)}</p>
-                <p><strong>Start time used:</strong> ${formatDateTime(student.started_at)}</p>
+                <p><strong>Actual exam start time:</strong> ${student.started_at ? formatDateTime(student.started_at) : "Will be set after signature"}</p>
                 <p><strong>Time rule:</strong> ${escapeHtml(getFinalTimeRuleText(student))}</p>
                 <p><strong>Late reason:</strong> ${escapeHtml(student.checkin.late_reason || "Not marked")}${student.checkin.late_reason === "Other" && student.checkin.late_other_text ? ` (${escapeHtml(student.checkin.late_other_text)})` : ""}</p>
               </div>
@@ -958,10 +952,18 @@
       if(!signatureHasInk){ alert("Please sign in the signature box first."); return; }
       const dataUrl = signatureCanvas.toDataURL("image/png");
       updateStudent(signatureStudentId, next => {
+        const now = Date.now();
         next.checkin.signature_data_url = dataUrl;
-        next.checkin.signed_at = Date.now();
+        next.checkin.signed_at = now;
         next.checkin.completed = true;
         next.checkin.step = 5;
+
+        if(next.checkin.confirmed_time_basis === "start_after_signature_on_time" || next.checkin.confirmed_time_basis === "start_after_signature_justified_late"){
+          next.started_at = now;
+        }else if(!next.started_at){
+          next.started_at = now;
+        }
+
         pushHistory(next, "Student signed and check in completed");
       });
       closeSignaturePage();
