@@ -245,6 +245,7 @@
     let notificationsSilenced = false;
     let signatureStudentId = null;
     let signatureHasInk = false;
+    let currentScreen = "home";
 
     const appRoot = document.getElementById("appRoot");
     const homeBanner = document.getElementById("homeBanner");
@@ -491,6 +492,7 @@
     }
 
     function switchScreen(name){
+      currentScreen = name;
       document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
       const nextScreen = document.getElementById(`screen-${name}`);
       if(nextScreen) nextScreen.classList.add("active");
@@ -620,7 +622,7 @@
           </div>
 
           <div class="grid2" style="margin-top:14px;">
-            <button id="arrivalNowBtn" class="action-btn primary" type="button">Use Current Time</button>
+            <button id="arrivalNowBtn" class="action-btn primary" type="button">Check In Now</button>
             <div>
               <label for="pendingCheckinTime">Check in time</label>
               <input id="pendingCheckinTime" class="large" type="datetime-local" value="${escapeHtml(pending)}" />
@@ -636,26 +638,19 @@
           </div>
 
           <div id="lateFieldsWrap" style="margin-top:14px; ${late ? "" : "display:none;"}">
-            <div class="detail-grid">
-              <div>
-                <label for="lateReasonSelect">Late reason</label>
-                <select id="lateReasonSelect" class="large">
-                  <option value="">Select</option>
-                  <option value="Traffic" ${student.checkin.late_reason === "Traffic" ? "selected" : ""}>Traffic</option>
-                  <option value="Forgot the time" ${student.checkin.late_reason === "Forgot the time" ? "selected" : ""}>Forgot the time</option>
-                  <option value="Could not find the room" ${student.checkin.late_reason === "Could not find the room" ? "selected" : ""}>Could not find the room</option>
-                  <option value="Disability related" ${student.checkin.late_reason === "Disability related" ? "selected" : ""}>Disability related</option>
-                  <option value="Needed more time to study" ${student.checkin.late_reason === "Needed more time to study" ? "selected" : ""}>Needed more time to study</option>
-                  <option value="Other" ${student.checkin.late_reason === "Other" ? "selected" : ""}>Other</option>
-                </select>
+            <div>
+              <label>Late reason</label>
+              <div class="grid3" id="lateReasonButtons">
+                ${["Traffic","Forgot the time","Could not find the room","Disability related","Needed more time to study","Other"].map(reason => `
+                  <button type="button" class="choice-btn ${student.checkin.late_reason === reason ? "active" : ""}" data-late-reason="${reason}">${reason}</button>
+                `).join("")}
               </div>
-              <div>
-                <label for="justifiedLateSelect">Justified late arrival</label>
-                <select id="justifiedLateSelect" class="large">
-                  <option value="">Select</option>
-                  <option value="yes" ${student.checkin.justified_late === "yes" ? "selected" : ""}>Yes</option>
-                  <option value="no" ${student.checkin.justified_late === "no" ? "selected" : ""}>No</option>
-                </select>
+            </div>
+            <div style="margin-top:14px;">
+              <label>Justified late arrival</label>
+              <div class="grid2">
+                <button id="justifiedYesBtn" type="button" class="choice-btn ${student.checkin.justified_late === "yes" ? "active" : ""}">Yes</button>
+                <button id="justifiedNoBtn" type="button" class="choice-btn ${student.checkin.justified_late === "no" ? "active" : ""}">No</button>
               </div>
             </div>
             <div id="lateOtherWrap" style="margin-top:14px; ${showOther ? "" : "display:none;"}">
@@ -705,6 +700,30 @@
         updateStudent(student.id, next => { next.checkin.late = true; });
       });
 
+      const lateReasonButtons = document.querySelectorAll("[data-late-reason]");
+      lateReasonButtons.forEach(btn => {
+        btn.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          lateReasonButtons.forEach(x => x.classList.remove("active"));
+          e.currentTarget.classList.add("active");
+          const wrap = document.getElementById("lateOtherWrap");
+          if(wrap) wrap.style.display = e.currentTarget.dataset.lateReason === "Other" ? "" : "none";
+        });
+      });
+
+      const justifiedYesBtn = document.getElementById("justifiedYesBtn");
+      const justifiedNoBtn = document.getElementById("justifiedNoBtn");
+      if(justifiedYesBtn) justifiedYesBtn.addEventListener("click", e => {
+        withPressedState(e.currentTarget);
+        justifiedYesBtn.classList.add("active");
+        if(justifiedNoBtn) justifiedNoBtn.classList.remove("active");
+      });
+      if(justifiedNoBtn) justifiedNoBtn.addEventListener("click", e => {
+        withPressedState(e.currentTarget);
+        justifiedNoBtn.classList.add("active");
+        if(justifiedYesBtn) justifiedYesBtn.classList.remove("active");
+      });
+
       document.getElementById("backToSelectBtn").addEventListener("click", e => {
         withPressedState(e.currentTarget);
         updateStudent(student.id, next => { next.checkin.step = 0; });
@@ -714,8 +733,8 @@
         withPressedState(e.currentTarget);
         const pendingValue = document.getElementById("pendingCheckinTime").value;
         const notes = document.getElementById("invigilatorNotesInput").value;
-        const lateReason = document.getElementById("lateReasonSelect") ? document.getElementById("lateReasonSelect").value : "";
-        const justified = document.getElementById("justifiedLateSelect") ? document.getElementById("justifiedLateSelect").value : "";
+        const lateReason = document.querySelector("#lateReasonButtons .choice-btn.active") ? document.querySelector("#lateReasonButtons .choice-btn.active").dataset.lateReason : "";
+        const justified = document.getElementById("justifiedYesBtn") && document.getElementById("justifiedYesBtn").classList.contains("active") ? "yes" : (document.getElementById("justifiedNoBtn") && document.getElementById("justifiedNoBtn").classList.contains("active") ? "no" : "");
         const otherText = document.getElementById("lateOtherInput") ? document.getElementById("lateOtherInput").value : "";
         const ts = toTimestamp(pendingValue) || Date.now();
         const isLate = student.checkin.late || isLateByClock(student, ts);
@@ -772,7 +791,7 @@
                 <p><strong>Arrival time:</strong> ${formatDateTime(student.arrival_time)}</p>
                 <p><strong>Start time used:</strong> ${formatDateTime(student.started_at)}</p>
                 <p><strong>Time rule:</strong> ${escapeHtml(getFinalTimeRuleText(student))}</p>
-                <p><strong>Late reason:</strong> ${escapeHtml(student.checkin.late_reason || "Not marked")}${student.checkin.late_reason === "Other" && student.checkin.late_other_text ? ` (${escapeHtml(student.checkin.late_other_text)})` : ""}</p>
+                <p><strong>Late reason:</strong> ${escapeHtml(student.checkin.late_reason || "Not marked")}${student.checkin.late_reason === "Other" && student.checkin.late_other_text ? ` (${escapeHtml(student.checkin.late_other_text)})` : ""}</p><p><strong>Invigilator notes:</strong> ${escapeHtml(student.checkin.invigilator_notes || "None")}</p>
               </div>
             </div>
           </div>
@@ -848,6 +867,7 @@
             <p>Please review the following with the student:</p>
             <p>We have confirmed your identity, your exam details, your listed accommodations, your break entitlements, and the timing rules that apply to your arrival today.</p>
             <p>Please confirm that the information reviewed with you is correct before you sign.</p>
+            <p><strong>Invigilator notes:</strong> ${escapeHtml(student.checkin.invigilator_notes || "None")}</p>
             <p><strong>Accommodations:</strong></p>
             ${renderAccommodationBlock(student)}
           </div>
@@ -1079,6 +1099,15 @@
     }
 
     function setField(id, field, value){ updateStudent(id, student => { student[field] = value; }); }
+
+    function renderDynamicScreensWithoutCheckin(){
+      renderHome();
+      renderCheckout();
+      renderStudents();
+      renderBreaks();
+      renderNotifications();
+      applyFlashingNotifications();
+    }
     function startBreak(id){
       updateStudent(id, student => {
         if(!student.started_at || student.finished_at || student.current_break_start) return;
@@ -1116,7 +1145,7 @@
 
     function renderAll(){
       renderHome();
-      renderCheckin();
+      if(currentScreen === "checkin") renderCheckin();
       renderCheckout();
       renderStudents();
       renderBreaks();
@@ -1135,7 +1164,7 @@
         if(student.current_break_start && breakRemaining <= 2*60*1000 && !student.break_alert_sent){ student.break_alert_sent = true; pushHistory(student, "Break is close to ending"); changed = true; }
       });
       if(changed) saveState();
-      renderAll();
+      renderDynamicScreensWithoutCheckin();
     }
 
     function bindStaticEvents(){
