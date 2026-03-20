@@ -26,7 +26,7 @@
     .app{max-width:1280px;margin:0 auto}
     button,input,select,textarea{font:inherit}
     .topnav{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:18px}
-    .nav-btn,.action-btn,.student-option,.locker-btn,.touch-check{
+    .nav-btn,.action-btn,.student-option,.locker-btn,.touch-check,.choice-btn{
       border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--text);
       padding:14px 18px;min-height:54px;font-weight:700;cursor:pointer;
       box-shadow:0 1px 0 rgba(0,0,0,.04);transition:transform .05s ease,box-shadow .08s ease,background .12s ease;
@@ -37,7 +37,9 @@
     .action-btn.orange{background:var(--orange);border-color:var(--orange);color:#fff}
     .action-btn.red{background:var(--red);border-color:var(--red);color:#fff}
     .action-btn.gray{background:var(--gray);border-color:var(--gray);color:#fff}
-    button:hover,.student-option:hover,.locker-btn:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    .choice-btn{width:100%;text-align:center;background:#fff}
+    .choice-btn.active{background:#dbeafe;border-color:#60a5fa;outline:2px solid rgba(96,165,250,.25)}
+    button:hover,.student-option:hover,.locker-btn:hover,.choice-btn:hover{box-shadow:0 2px 10px rgba(0,0,0,.08)}
     button:active,.pressed{transform:translateY(2px) scale(.99);box-shadow:inset 0 2px 6px rgba(0,0,0,.18)}
     button:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
     .screen{display:none}
@@ -59,6 +61,10 @@
     .home-card,.student-card,.note-card,.wizard-card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:16px}
     .home-card{background:var(--panel);display:grid;gap:10px;align-content:center;min-height:160px;text-align:center}
     .muted{color:var(--muted)}
+    .csv-status{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#f8fafc;font-size:.95rem}
+    .csv-status.ok{background:#ecfdf5;border-color:#86efac}
+    .csv-status.warn{background:#fff7ed;border-color:#fdba74}
+    .csv-status.error{background:#fef2f2;border-color:#fca5a5}
     label{display:block;margin-bottom:6px;font-weight:700}
     input[type="text"],input[type="datetime-local"],select,textarea{
       width:100%;padding:15px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text);font-size:1rem
@@ -139,7 +145,8 @@
     <section id="screen-home" class="screen active">
       <div id="homeBanner" class="banner"></div>
       <div class="panel">
-        <div class="summary-grid">
+        <div id="csvStatus" class="csv-status warn">CSV not loaded yet.</div>
+        <div class="summary-grid" style="margin-top:14px;">
           <div>
             <h2 style="margin-top:0">Current students and next notifications</h2>
             <div id="homeSummaryList"></div>
@@ -241,14 +248,20 @@
   </div>
 
   <script>
-    const STORAGE_KEY = "exam_app_session_v7";
-    const CSV_PATH = "students.csv";
+    const STORAGE_KEY = "exam_app_session_v8";
+    const CSV_PATHS = [
+      "students.csv",
+      "./students.csv",
+      "data/students.csv",
+      "./data/students.csv"
+    ];
 
     let students = [];
     let selectedCheckinId = null;
     let notificationsSilenced = false;
     let signatureStudentId = null;
     let signatureHasInk = false;
+    let csvLoadInfo = { status: "warn", message: "CSV not loaded yet." };
 
     const appRoot = document.getElementById("appRoot");
     const homeBanner = document.getElementById("homeBanner");
@@ -265,6 +278,7 @@
     const breakList = document.getElementById("breakList");
     const notificationList = document.getElementById("notificationList");
     const globalNotificationBanner = document.getElementById("globalNotificationBanner");
+    const csvStatus = document.getElementById("csvStatus");
 
     const signaturePage = document.getElementById("signaturePage");
     const signatureCanvas = document.getElementById("signatureCanvas");
@@ -277,48 +291,137 @@
     let drawing = false;
     let lastPoint = null;
 
-    function safeCall(fn){ try{ fn(); }catch(error){ console.error(error); alert("A script error occurred. Replace index.html with the newest file."); } }
+    function safeCall(fn){
+      try{
+        const result = fn();
+        if(result && typeof result.catch === "function"){
+          result.catch(error => {
+            console.error(error);
+            alert("A script error occurred. Replace index.html with the newest file.");
+          });
+        }
+      }catch(error){
+        console.error(error);
+        alert("A script error occurred. Replace index.html with the newest file.");
+      }
+    }
+
     function clone(v){ return JSON.parse(JSON.stringify(v)); }
     function toTimestamp(v){ if(!v) return null; const d = new Date(v); return Number.isNaN(d.getTime()) ? null : d.getTime(); }
     function formatDateTime(ts){ if(!ts) return "Not set"; return new Date(ts).toLocaleString([], {year:"numeric", month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); }
     function formatClock(ms){ const s = Math.max(0, Math.floor(ms/1000)); const h=Math.floor(s/3600); const m=Math.floor((s%3600)/60); const sec=s%60; return [h,m,sec].map((n,i)=>i===0?String(n):String(n).padStart(2,"0")).join(":"); }
     function minutesToMs(min){ return Number(min||0)*60*1000; }
-    function escapeHtml(v){ return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;"); }
-    function parseAccommodations(v){ return String(v||"").split("|").map(x=>x.trim()).filter(Boolean); }
+    function escapeHtml(v){ return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;"); }
+    function parseAccommodations(v){ return String(v || "").split("|").map(x=>x.trim()).filter(Boolean); }
+
+    function normalizeHeader(header){
+      return String(header || "")
+        .replace(/^\uFEFF/, "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^\w]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    }
 
     function parseCSV(text){
-      const rows=[]; let row=[]; let value=""; let inQuotes=false;
-      for(let i=0;i<text.length;i++){
-        const char=text[i], next=text[i+1];
-        if(char === '"'){ if(inQuotes && next === '"'){ value += '"'; i++; } else inQuotes = !inQuotes; }
-        else if(char === "," && !inQuotes){ row.push(value); value=""; }
-        else if((char === "\n" || char === "\r") && !inQuotes){ if(char === "\r" && next === "\n") i++; row.push(value); if(row.some(c=>c !== "")) rows.push(row); row=[]; value=""; }
-        else value += char;
+      const cleaned = String(text || "").replace(/^\uFEFF/, "");
+      const rows = [];
+      let row = [];
+      let value = "";
+      let inQuotes = false;
+
+      for(let i = 0; i < cleaned.length; i++){
+        const char = cleaned[i];
+        const next = cleaned[i + 1];
+
+        if(char === '"'){
+          if(inQuotes && next === '"'){
+            value += '"';
+            i++;
+          }else{
+            inQuotes = !inQuotes;
+          }
+        }else if(char === "," && !inQuotes){
+          row.push(value);
+          value = "";
+        }else if((char === "\n" || char === "\r") && !inQuotes){
+          if(char === "\r" && next === "\n") i++;
+          row.push(value);
+          if(row.some(c => String(c).trim() !== "")) rows.push(row);
+          row = [];
+          value = "";
+        }else{
+          value += char;
+        }
       }
-      if(value.length || row.length){ row.push(value); if(row.some(c=>c !== "")) rows.push(row); }
+
+      if(value.length || row.length){
+        row.push(value);
+        if(row.some(c => String(c).trim() !== "")) rows.push(row);
+      }
+
       if(!rows.length) return [];
-      const headers = rows[0].map(h=>h.trim());
+
+      const headers = rows[0].map(normalizeHeader);
+
       return rows.slice(1).map(cols => {
-        const obj={}; headers.forEach((h,i)=>obj[h]=(cols[i]||"").trim()); return obj;
+        const obj = {};
+        headers.forEach((h, i) => {
+          obj[h] = (cols[i] || "").trim();
+        });
+        return obj;
       });
     }
 
+    function pick(record, keys, fallback = ""){
+      for(const key of keys){
+        const normalized = normalizeHeader(key);
+        if(record[normalized] !== undefined && record[normalized] !== "") return record[normalized];
+      }
+      return fallback;
+    }
+
+    function toNumber(value, fallback = 0){
+      const n = Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
     function normalizeRecord(record, index){
+      const studentId = pick(record, ["student_id", "id", "studentid", "candidate_id"], `row_${index+1}`);
+      const studentName = pick(record, ["student_name", "name", "full_name", "student"], `Student ${index+1}`);
+      const studentNumber = pick(record, ["student_number", "student_no", "number", "studentnumber"], "");
+      const seat = pick(record, ["seat", "seat_number", "desk", "table"], "");
+      const professor = pick(record, ["professor", "instructor", "faculty", "teacher"], "");
+      const courseCode = pick(record, ["course_code", "course", "coursecode", "class_code"], "");
+      const lectureSection = pick(record, ["lecture_section", "section", "lecture", "class_section"], "");
+      const examMinutes = toNumber(pick(record, ["exam_minutes", "minutes", "duration_minutes", "exam_duration", "duration"], 0), 0);
+      const scheduledStart = toTimestamp(pick(record, ["scheduled_start", "start_time", "scheduled_time", "exam_start", "start"], ""));
+      const location = pick(record, ["location", "room", "exam_room"], "");
+      const breakTypeRaw = pick(record, ["break_type", "breaks", "break_rule"], "none").toLowerCase();
+      const breakAllowanceMinutes = toNumber(pick(record, ["break_allowance_minutes", "break_minutes", "allowed_break_minutes"], 0), 0);
+      const accommodations = parseAccommodations(pick(record, ["accommodations", "accommodation", "supports"], ""));
+      const notes = pick(record, ["notes", "note", "comments"], "");
+
+      let breakType = breakTypeRaw;
+      if(["no", "none", "n", ""].includes(breakType)) breakType = "none";
+      if(["cumulative", "total", "pooled"].includes(breakType)) breakType = "cumulative";
+      if(["per_hour", "perhour", "hourly", "per_hour_break"].includes(breakType)) breakType = "per_hour";
+
       return {
-        id: record.student_id || `row_${index+1}`,
-        student_name: record.student_name || `Student ${index+1}`,
-        student_number: record.student_number || "",
-        seat: record.seat || "",
-        professor: record.professor || "",
-        course_code: record.course_code || "",
-        lecture_section: record.lecture_section || "",
-        exam_minutes: Number(record.exam_minutes || 0),
-        scheduled_start: toTimestamp(record.scheduled_start),
-        location: record.location || "",
-        break_type: (record.break_type || "none").toLowerCase(),
-        break_allowance_minutes: Number(record.break_allowance_minutes || 0),
-        accommodations: parseAccommodations(record.accommodations),
-        notes: record.notes || "",
+        id: studentId,
+        student_name: studentName,
+        student_number: studentNumber,
+        seat,
+        professor,
+        course_code: courseCode,
+        lecture_section: lectureSection,
+        exam_minutes: examMinutes,
+        scheduled_start: scheduledStart,
+        location,
+        break_type: breakType,
+        break_allowance_minutes: breakAllowanceMinutes,
+        accommodations,
+        notes,
         arrival_time: null,
         started_at: null,
         finished_at: null,
@@ -379,14 +482,47 @@
       });
     }
 
+    async function tryLoadCsvFromPath(path){
+      const response = await fetch(`${path}${path.includes("?") ? "&" : "?"}v=${Date.now()}`, { cache: "no-store" });
+      if(!response.ok) throw new Error(`Could not load ${path} (${response.status})`);
+      const text = await response.text();
+      const records = parseCSV(text);
+      if(!records.length) throw new Error(`${path} loaded but contained no rows`);
+      return { path, text, records };
+    }
+
     async function loadStudentsFromCsv(){
+      let loaded = null;
+      let lastError = null;
+
+      for(const path of CSV_PATHS){
+        try{
+          loaded = await tryLoadCsvFromPath(path);
+          break;
+        }catch(error){
+          lastError = error;
+          console.warn(error);
+        }
+      }
+
+      if(!loaded){
+        students = [];
+        csvLoadInfo = {
+          status: "error",
+          message: lastError ? lastError.message : "Unable to load any CSV path."
+        };
+        renderAll();
+        alert(csvLoadInfo.message);
+        return;
+      }
+
       try{
-        const response = await fetch(`${CSV_PATH}?v=${Date.now()}`, {cache:"no-store"});
-        if(!response.ok) throw new Error("Could not load students.csv");
-        const text = await response.text();
-        const records = parseCSV(text);
-        if(!records.length) throw new Error("students.csv is empty");
-        const csvStudents = records.map(normalizeRecord);
+        const csvStudents = loaded.records.map(normalizeRecord).filter(s => s.id && s.student_name);
+
+        if(!csvStudents.length){
+          throw new Error(`CSV loaded from ${loaded.path}, but no valid student rows were created.`);
+        }
+
         const savedRaw = localStorage.getItem(STORAGE_KEY);
         if(savedRaw){
           try{
@@ -398,18 +534,28 @@
         }else{
           students = csvStudents;
         }
+
         selectedCheckinId = students[0] ? students[0].id : null;
+        csvLoadInfo = {
+          status: "ok",
+          message: `Loaded ${students.length} student${students.length === 1 ? "" : "s"} from ${loaded.path}`
+        };
         saveState();
         renderAll();
       }catch(error){
         console.error(error);
         students = [];
+        csvLoadInfo = {
+          status: "error",
+          message: error.message || "CSV parsing failed."
+        };
         renderAll();
-        alert(error.message);
+        alert(csvLoadInfo.message);
       }
     }
 
     function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(students)); }
+
     function updateStudent(id, updater){
       students = students.map(student => {
         if(student.id !== id) return student;
@@ -420,9 +566,11 @@
       saveState();
       renderAll();
     }
+
     function getStudentById(id){ return students.find(s => s.id === id) || null; }
     function pushHistory(student, text){ student.history.unshift(`${new Date().toLocaleString()}: ${text}`); student.history = student.history.slice(0, 40); }
     function getElapsedExamMs(student){ if(!student.started_at) return 0; return Math.max(0, (student.finished_at || Date.now()) - student.started_at); }
+
     function getAllowedBreakMs(student){
       if(student.break_type === "none") return 0;
       if(student.break_type === "cumulative") return minutesToMs(student.break_allowance_minutes);
@@ -433,17 +581,29 @@
       }
       return 0;
     }
+
     function getCurrentBreakMs(student){ if(!student.current_break_start) return 0; return Math.max(0, Date.now() - student.current_break_start); }
     function getTotalUsedBreakMs(student){ return student.used_break_ms + getCurrentBreakMs(student); }
     function getRemainingBreakMs(student){ return Math.max(0, getAllowedBreakMs(student) - getTotalUsedBreakMs(student)); }
     function getExamEndMs(student){ if(!student.started_at) return null; return student.started_at + minutesToMs(student.exam_minutes) + getTotalUsedBreakMs(student); }
     function getTimeRemainingMs(student){ if(!student.started_at || student.finished_at) return 0; return Math.max(0, getExamEndMs(student) - Date.now()); }
     function getStatus(student){ if(student.finished_at) return "finished"; if(student.current_break_start) return "on_break"; if(student.started_at) return "checked_in"; return "not_checked_in"; }
+
     function describeBreak(student){
       if(student.break_type === "none") return "No breaks";
       if(student.break_type === "cumulative") return `${student.break_allowance_minutes} min cumulative`;
       if(student.break_type === "per_hour") return `${student.break_allowance_minutes} min per hour`;
       return student.break_type;
+    }
+
+    function getFinalTimeRuleText(student){
+      if(!student.checkin.late){
+        return "Student is on time. Full exam time begins after signature is completed.";
+      }
+      if(student.checkin.justified_late === "yes"){
+        return "Late arrival is justified. Full exam time begins after signature is completed.";
+      }
+      return "Late arrival is not justified. Exam time is counted from the scheduled start time.";
     }
 
     function getNotificationMeta(student){
@@ -508,6 +668,11 @@
       setTimeout(() => button.classList.remove("pressed"), 140);
     }
 
+    function renderCsvStatus(){
+      csvStatus.className = `csv-status ${csvLoadInfo.status || "warn"}`;
+      csvStatus.textContent = csvLoadInfo.message || "CSV status unknown.";
+    }
+
     function renderCheckedInSummary(targetEl){
       const checkedIn = students.filter(s => s.started_at && !s.finished_at);
       if(!targetEl) return;
@@ -531,6 +696,7 @@
     }
 
     function renderHome(){
+      renderCsvStatus();
       renderCheckedInSummary(homeSummaryList);
       renderCheckedInSummary(checkinSummaryList);
     }
@@ -580,7 +746,8 @@
     }
 
     function renderCheckinSelectStep(){
-      const q = document.getElementById("checkinStudentSearch") ? document.getElementById("checkinStudentSearch").value.trim().toLowerCase() : "";
+      const existing = document.getElementById("checkinStudentSearch");
+      const q = existing ? existing.value.trim().toLowerCase() : "";
       const filtered = students.filter(student => [student.student_name, student.seat, student.course_code, student.professor].join(" ").toLowerCase().includes(q));
       checkinStepContent.innerHTML = `
         <div class="wizard-card">
@@ -925,15 +1092,32 @@
       signatureCtx.lineJoin = "round";
       signatureCtx.strokeStyle = "#111827";
     }
-    function clearSignatureCanvas(){ signatureCtx.clearRect(0,0,signatureCanvas.width,signatureCanvas.height); signatureHasInk = false; }
+
+    function clearSignatureCanvas(){
+      signatureCtx.clearRect(0,0,signatureCanvas.width,signatureCanvas.height);
+      signatureHasInk = false;
+    }
+
     function canvasPointFromEvent(event){
       const rect = signatureCanvas.getBoundingClientRect();
-      let clientX=0, clientY=0;
-      if(event.touches && event.touches[0]){ clientX = event.touches[0].clientX; clientY = event.touches[0].clientY; }
-      else { clientX = event.clientX; clientY = event.clientY; }
+      let clientX = 0;
+      let clientY = 0;
+      if(event.touches && event.touches[0]){
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+      }else{
+        clientX = event.clientX;
+        clientY = event.clientY;
+      }
       return {x: clientX - rect.left, y: clientY - rect.top};
     }
-    function startDrawing(event){ event.preventDefault(); drawing = true; lastPoint = canvasPointFromEvent(event); }
+
+    function startDrawing(event){
+      event.preventDefault();
+      drawing = true;
+      lastPoint = canvasPointFromEvent(event);
+    }
+
     function draw(event){
       if(!drawing) return;
       event.preventDefault();
@@ -945,7 +1129,13 @@
       lastPoint = point;
       signatureHasInk = true;
     }
-    function stopDrawing(event){ if(!drawing) return; event.preventDefault(); drawing = false; lastPoint = null; }
+
+    function stopDrawing(event){
+      if(!drawing) return;
+      event.preventDefault();
+      drawing = false;
+      lastPoint = null;
+    }
 
     function completeCheckinWithSignature(){
       if(!signatureStudentId) return;
@@ -1093,6 +1283,7 @@
     }
 
     function setField(id, field, value){ updateStudent(id, student => { student[field] = value; }); }
+
     function startBreak(id){
       updateStudent(id, student => {
         if(!student.started_at || student.finished_at || student.current_break_start) return;
@@ -1102,25 +1293,29 @@
         pushHistory(student, "Break started");
       });
     }
+
     function endBreak(id){
       updateStudent(id, student => {
         if(!student.current_break_start) return;
-        const duration = Date.now() - student.current_break_start;
+        const endTime = Date.now();
+        const duration = endTime - student.current_break_start;
         student.used_break_ms += duration;
-        student.break_events.push({start: student.current_break_start, end: Date.now(), duration_ms: duration});
+        student.break_events.push({start: student.current_break_start, end: endTime, duration_ms: duration});
         student.current_break_start = null;
         student.break_alert_sent = false;
         pushHistory(student, `Break ended after ${formatClock(duration)}`);
       });
     }
+
     function finishExam(id){
       const ok = confirm("Confirm that this student has finished the exam.");
       if(!ok) return;
       updateStudent(id, student => {
         if(student.current_break_start){
-          const duration = Date.now() - student.current_break_start;
+          const endTime = Date.now();
+          const duration = endTime - student.current_break_start;
           student.used_break_ms += duration;
-          student.break_events.push({start: student.current_break_start, end: Date.now(), duration_ms: duration});
+          student.break_events.push({start: student.current_break_start, end: endTime, duration_ms: duration});
           student.current_break_start = null;
         }
         student.finished_at = Date.now();
@@ -1179,7 +1374,9 @@
           const saved = signatureCanvas.toDataURL();
           resizeSignatureCanvas();
           const img = new Image();
-          img.onload = () => { signatureCtx.drawImage(img, 0, 0, signatureCanvas.clientWidth, signatureCanvas.clientHeight); };
+          img.onload = () => {
+            signatureCtx.drawImage(img, 0, 0, signatureCanvas.clientWidth, signatureCanvas.clientHeight);
+          };
           img.src = saved;
         }
       });
