@@ -1,6 +1,6 @@
 student_id,student_name,seat,professor,course_code,lecture_section,exam_minutes,scheduled_start,location,break_type,break_allowance_minutes,notes
 2001,Amina Yusuf,A12,Dr. Chen,SOC101,L0101,3,2026-03-19T09:00,AA1120,none,0,No breaks approved
-2002,Marcus Brown,B03,Prof. Lee,PSY201,L0201,180,2026-03-19T09:00,AA1120,per_hour,10,Ten minutes of break per hour
+2002,Marcus Brown,B03,Prof. Lee,PSY201,L0201,11 ,2026-03-19T09:00,AA1120,per_hour,10,Ten minutes of break per hour
 2003,Sophia Patel,C08,Dr. Singh,STA220,L5101,90,2026-03-19T09:30,AA1120,cumulative,15,Fifteen minutes total break pool
 2004,Daniela Torres,D15,Dr. Osei,BIO130,L0301,240,2026-03-19T10:00,AA1120,cumulative,45,Large cumulative break allocation
 2005,Ethan Williams,E02,Prof. Ahmed,ENG150,L0401,150,2026-03-19T10:15,AA1120,cumulative,5,Very limited cumulative break
