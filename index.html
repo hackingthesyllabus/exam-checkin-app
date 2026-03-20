@@ -11,7 +11,6 @@
       --muted: #6b7280;
       --line: #d1d5db;
       --panel: #f9fafb;
-      --panel-2: #f3f4f6;
       --blue: #2563eb;
       --green: #16a34a;
       --amber: #d97706;
@@ -21,6 +20,7 @@
 
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html, body {
@@ -37,7 +37,7 @@
     }
 
     .app {
-      max-width: 1200px;
+      max-width: 1260px;
       margin: 0 auto;
     }
 
@@ -57,7 +57,9 @@
     }
 
     .nav-btn,
-    .action-btn {
+    .action-btn,
+    .choice-btn,
+    .touch-check {
       border: 1px solid var(--line);
       border-radius: 14px;
       background: white;
@@ -65,7 +67,9 @@
       padding: 14px 18px;
       cursor: pointer;
       font-weight: 700;
-      min-height: 52px;
+      min-height: 54px;
+      transition: transform 0.05s ease, box-shadow 0.08s ease, background 0.12s ease;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
     }
 
     .nav-btn.active {
@@ -104,6 +108,23 @@
       border-color: var(--gray);
     }
 
+    button:hover {
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    button:active,
+    .pressed {
+      transform: translateY(2px) scale(0.99);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.18);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
     .screen {
       display: none;
     }
@@ -121,7 +142,7 @@
     }
 
     .centered {
-      max-width: 900px;
+      max-width: 980px;
       margin: 0 auto;
     }
 
@@ -159,7 +180,9 @@
     .student-list,
     .stats,
     .detail-grid,
-    .notification-list {
+    .notification-list,
+    .locker-grid,
+    .touch-check-grid {
       display: grid;
       gap: 14px;
     }
@@ -184,6 +207,15 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .locker-grid {
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .touch-check-grid {
+      grid-template-columns: 1fr;
+    }
+
     label {
       display: block;
       margin-bottom: 6px;
@@ -195,7 +227,7 @@
     select,
     textarea {
       width: 100%;
-      padding: 12px 14px;
+      padding: 13px 14px;
       border-radius: 12px;
       border: 1px solid var(--line);
       background: white;
@@ -209,7 +241,9 @@
 
     .student-option,
     .student-card,
-    .note-card {
+    .note-card,
+    .wizard-step,
+    .signature-stage {
       border: 1px solid var(--line);
       border-radius: 16px;
       background: white;
@@ -379,11 +413,158 @@
       border-radius: 14px;
     }
 
+    .step-title {
+      margin-bottom: 10px;
+    }
+
+    .checkin-progress {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .progress-pill {
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .progress-pill.active {
+      background: #dbeafe;
+      border-color: #60a5fa;
+    }
+
+    .progress-pill.done {
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+
+    .choice-btn.active,
+    .touch-check.active,
+    .locker-btn.active {
+      background: #dbeafe;
+      border-color: #60a5fa;
+      outline: 2px solid rgba(96,165,250,0.25);
+    }
+
+    .touch-check {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 66px;
+      text-align: left;
+      width: 100%;
+      background: white;
+    }
+
+    .touch-check .touch-box {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--line);
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      background: white;
+      flex: 0 0 auto;
+    }
+
+    .touch-check.active .touch-box {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    .locker-btn {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+      min-height: 54px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .script-box {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    .signature-page {
+      position: fixed;
+      inset: 0;
+      background: white;
+      z-index: 999;
+      display: none;
+      overflow: hidden;
+      padding: 20px;
+    }
+
+    .signature-page.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .signature-page h2,
+    .signature-page p {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .signature-wrapper {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      min-height: 0;
+    }
+
+    .signature-canvas {
+      flex: 1 1 auto;
+      width: 100%;
+      border: 2px solid var(--line);
+      border-radius: 16px;
+      touch-action: none;
+      background: #ffffff;
+      min-height: 320px;
+    }
+
+    .signature-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .helper-line {
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .accommodation-list {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.5;
+    }
+
     @media (max-width: 1000px) {
       .home-grid,
       .stats,
       .detail-grid,
-      .grid3 {
+      .grid3,
+      .locker-grid,
+      .signature-actions {
         grid-template-columns: 1fr;
       }
 
@@ -409,7 +590,7 @@
         <div class="home-grid">
           <div class="home-card">
             <h2>Check In</h2>
-            <p class="muted">Find a student and record arrival.</p>
+            <p class="muted">Find a student and begin guided check in.</p>
             <button class="action-btn primary" data-screen="checkin">Open</button>
           </div>
           <div class="home-card">
@@ -439,7 +620,9 @@
     <section id="screen-checkin" class="screen">
       <div class="panel centered">
         <h2>Check In</h2>
-        <p class="muted">Select a student and record arrival.</p>
+        <p class="muted">Select a student, review their details, record arrival, review accommodations, then collect student signature.</p>
+
+        <div class="checkin-progress" id="checkinProgress"></div>
 
         <div class="grid2">
           <div>
@@ -530,13 +713,32 @@
     </section>
   </div>
 
+  <div id="signaturePage" class="signature-page">
+    <div class="signature-wrapper">
+      <div>
+        <h2>Student Signature</h2>
+        <p id="signatureIntro">Please review the statement below and sign inside the box.</p>
+      </div>
+      <div class="script-box" id="signatureScriptBox"></div>
+      <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+      <div class="helper-line" style="text-align:center;">Student signs in the box above using a finger or stylus.</div>
+      <div class="signature-actions">
+        <button id="clearSignatureBtn" class="action-btn gray">Clear Signature</button>
+        <button id="cancelSignatureBtn" class="action-btn amber">Back</button>
+        <button id="confirmSignatureBtn" class="action-btn green">Signed and Complete Check In</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const STORAGE_KEY = "exam_app_session_v4";
+    const STORAGE_KEY = "exam_app_session_v5";
     const CSV_PATH = "students.csv";
 
     let students = [];
     let selectedCheckinId = null;
     let notificationsSilenced = false;
+    let signatureStudentId = null;
+    let signatureHasInk = false;
 
     const appRoot = document.getElementById("appRoot");
 
@@ -544,6 +746,7 @@
     const customCheckinTime = document.getElementById("customCheckinTime");
     const checkinStudentList = document.getElementById("checkinStudentList");
     const checkinDetails = document.getElementById("checkinDetails");
+    const checkinProgress = document.getElementById("checkinProgress");
 
     const checkoutSearch = document.getElementById("checkoutSearch");
     const checkoutFilter = document.getElementById("checkoutFilter");
@@ -556,6 +759,18 @@
     const breakList = document.getElementById("breakList");
     const notificationList = document.getElementById("notificationList");
     const globalNotificationBanner = document.getElementById("globalNotificationBanner");
+
+    const signaturePage = document.getElementById("signaturePage");
+    const signatureCanvas = document.getElementById("signatureCanvas");
+    const signatureIntro = document.getElementById("signatureIntro");
+    const signatureScriptBox = document.getElementById("signatureScriptBox");
+    const clearSignatureBtn = document.getElementById("clearSignatureBtn");
+    const cancelSignatureBtn = document.getElementById("cancelSignatureBtn");
+    const confirmSignatureBtn = document.getElementById("confirmSignatureBtn");
+
+    const signatureCtx = signatureCanvas.getContext("2d");
+    let drawing = false;
+    let lastPoint = null;
 
     function parseCSV(text) {
       const rows = [];
@@ -577,8 +792,12 @@
         } else if (char === "," && !inQuotes) {
           row.push(value);
           value = "";
-        } else if ((char === "\n" || char === "\r") && !inQuotes) {
-          if (char === "\r" && next === "\n") i++;
+        } else if ((char === "
+" || char === "
+") && !inQuotes) {
+          if (char === "
+" && next === "
+") i++;
           row.push(value);
           if (row.some(cell => cell !== "")) rows.push(row);
           row = [];
@@ -647,6 +866,13 @@
       return JSON.parse(JSON.stringify(value));
     }
 
+    function parseAccommodations(value) {
+      return String(value || "")
+        .split("|")
+        .map(item => item.trim())
+        .filter(Boolean);
+    }
+
     function normalizeRecord(record, index) {
       return {
         id: record.student_id || `row_${index + 1}`,
@@ -662,6 +888,8 @@
         break_type: (record.break_type || "none").toLowerCase(),
         break_allowance_minutes: Number(record.break_allowance_minutes || 0),
         notes: record.notes || "",
+        accommodations: parseAccommodations(record.accommodations),
+        student_number: record.student_number || "",
         started_at: null,
         finished_at: null,
         current_break_start: null,
@@ -674,6 +902,22 @@
         completion_collected_by: "",
         completion_materials_returned: "",
         professor_notified: "",
+        checkin: {
+          step: 0,
+          late: false,
+          late_reason: "",
+          late_other_text: "",
+          justified_late: "",
+          invigilator_notes: "",
+          card_seen: false,
+          student_seen: false,
+          locker_taken: false,
+          locker_number: "",
+          signature_data_url: "",
+          signed_at: null,
+          completed: false,
+          confirmed_time_basis: ""
+        },
         history: [`${new Date().toLocaleString()}: Student record loaded from CSV`]
       };
     }
@@ -698,6 +942,10 @@
           completion_collected_by: saved.completion_collected_by || "",
           completion_materials_returned: saved.completion_materials_returned || "",
           professor_notified: saved.professor_notified || "",
+          checkin: {
+            ...csvStudent.checkin,
+            ...(saved.checkin || {})
+          },
           history: Array.isArray(saved.history) && saved.history.length ? saved.history : csvStudent.history
         };
       });
@@ -756,7 +1004,7 @@
 
     function pushHistory(student, text) {
       student.history.unshift(`${new Date().toLocaleString()}: ${text}`);
-      student.history = student.history.slice(0, 25);
+      student.history = student.history.slice(0, 30);
     }
 
     function getElapsedExamMs(student) {
@@ -892,6 +1140,27 @@
       renderAll();
     }
 
+    function withPressedState(button) {
+      button.classList.add("pressed");
+      setTimeout(() => button.classList.remove("pressed"), 140);
+    }
+
+    function getCheckinSteps(student) {
+      const step = student?.checkin?.step || 0;
+      return [
+        { key: 0, label: "Select Student", state: step > 0 ? "done" : "active" },
+        { key: 1, label: "Arrival", state: step > 1 ? "done" : step === 1 ? "active" : "" },
+        { key: 2, label: "Review", state: step > 2 ? "done" : step === 2 ? "active" : "" },
+        { key: 3, label: "Confirm", state: step > 3 ? "done" : step === 3 ? "active" : "" },
+        { key: 4, label: "Signature", state: step > 4 ? "done" : step === 4 ? "active" : "" }
+      ];
+    }
+
+    function renderCheckinProgress(student) {
+      const items = getCheckinSteps(student);
+      checkinProgress.innerHTML = items.map(item => `<div class="progress-pill ${item.state}">${item.label}</div>`).join("");
+    }
+
     function createStudentOption(student, active = false) {
       const div = document.createElement("div");
       div.className = `student-option${active ? " active" : ""}`;
@@ -903,8 +1172,40 @@
       return div;
     }
 
+    function isLateByClock(student, checkinTs) {
+      return !!student.scheduled_start && checkinTs > student.scheduled_start;
+    }
+
+    function getAdjustedStartPreview(student, proposedTs) {
+      const late = student.checkin.late;
+      const justified = student.checkin.justified_late === "yes";
+      if (late && justified && student.scheduled_start) {
+        return proposedTs;
+      }
+      if (student.scheduled_start) {
+        return Math.max(proposedTs, student.scheduled_start);
+      }
+      return proposedTs;
+    }
+
+    function getFinalTimeRuleText(student) {
+      if (!student.arrival_time || !student.started_at) return "Not set yet";
+      if (!student.checkin.late) return "Student was not late. Full time starts at check in time or scheduled start, whichever is later.";
+      if (student.checkin.justified_late === "yes") return "Late arrival marked justified. Student receives full exam time from check in time.";
+      if (student.checkin.justified_late === "no") return "Late arrival marked not justified. Student time is based on scheduled start and lateness reduces total remaining time.";
+      return "Late arrival not fully classified yet.";
+    }
+
+    function renderAccommodationBlock(student) {
+      if (!student.accommodations.length) {
+        return `<p class="muted">No accommodations listed in the CSV.</p>`;
+      }
+      return `<ul class="accommodation-list">${student.accommodations.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+    }
+
     function renderCheckin() {
       if (!students.length) {
+        renderCheckinProgress(null);
         checkinStudentList.innerHTML = `<div class="empty">No students loaded.</div>`;
         checkinDetails.innerHTML = `<div class="empty">Student details will appear here.</div>`;
         return;
@@ -924,7 +1225,10 @@
         const item = createStudentOption(student, student.id === selectedCheckinId);
         item.addEventListener("click", () => {
           selectedCheckinId = student.id;
-          renderCheckin();
+          updateStudent(student.id, next => {
+            if ((next.checkin.step || 0) < 1) next.checkin.step = 1;
+          });
+          setTimeout(() => checkinDetails.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
         });
         checkinStudentList.appendChild(item);
       });
@@ -934,113 +1238,493 @@
       }
 
       const student = getStudentById(selectedCheckinId);
+      renderCheckinProgress(student);
+
       if (!student) {
         checkinDetails.innerHTML = `<div class="empty">Select a student.</div>`;
         return;
       }
 
-      checkinDetails.innerHTML = `
-        <h3 style="text-align:center;">${escapeHtml(student.student_name)}</h3>
+      const step = student.checkin.step || 1;
+      const proposedCheckinTs = toTimestamp(customCheckinTime.value) || Date.now();
+      const lateByClock = isLateByClock(student, proposedCheckinTs);
+      const previewStart = getAdjustedStartPreview(student, proposedCheckinTs);
+      const previewEnd = previewStart + minutesToMs(student.exam_minutes);
+
+      let bodyHtml = `
+        <div class="student-header">
+          <div>
+            <h3>${escapeHtml(student.student_name)}</h3>
+            <div class="pill-row">
+              <span class="pill">Seat ${escapeHtml(student.seat)}</span>
+              <span class="pill">${escapeHtml(student.course_code)}</span>
+              <span class="pill">${escapeHtml(student.lecture_section)}</span>
+            </div>
+          </div>
+          <div class="pill-row">
+            <span class="pill">Professor: ${escapeHtml(student.professor)}</span>
+            <span class="pill">Room: ${escapeHtml(student.location)}</span>
+          </div>
+        </div>
         <div class="stats">
-          <div class="stat-box"><div class="label">Seat</div><div class="value">${escapeHtml(student.seat)}</div></div>
-          <div class="stat-box"><div class="label">Course</div><div class="value">${escapeHtml(student.course_code)}</div></div>
-          <div class="stat-box"><div class="label">Section</div><div class="value">${escapeHtml(student.lecture_section)}</div></div>
-          <div class="stat-box"><div class="label">Professor</div><div class="value">${escapeHtml(student.professor)}</div></div>
-          <div class="stat-box"><div class="label">Location</div><div class="value">${escapeHtml(student.location)}</div></div>
           <div class="stat-box"><div class="label">Scheduled start</div><div class="value">${formatDateTime(student.scheduled_start)}</div></div>
           <div class="stat-box"><div class="label">Exam length</div><div class="value">${student.exam_minutes} min</div></div>
           <div class="stat-box"><div class="label">Breaks</div><div class="value">${escapeHtml(describeBreak(student))}</div></div>
-        </div>
-        <p class="muted" style="text-align:center; margin-top:14px;">${escapeHtml(student.notes || "")}</p>
-        <div class="grid2" style="margin-top:14px;">
-          <button id="checkinNowBtn" class="action-btn primary">Check in now</button>
-          <button id="checkinCustomBtn" class="action-btn green">Use custom time</button>
+          <div class="stat-box"><div class="label">Student number</div><div class="value">${escapeHtml(student.student_number || "Not listed")}</div></div>
         </div>
       `;
 
-      document.getElementById("checkinNowBtn").addEventListener("click", () => checkInStudent(student.id, Date.now()));
-      document.getElementById("checkinCustomBtn").addEventListener("click", () => {
-        const custom = toTimestamp(customCheckinTime.value);
-        if (!custom) {
-          alert("Enter a custom check in time first.");
-          return;
-        }
-        checkInStudent(student.id, custom);
-      });
-    }
+      if (step <= 1) {
+        bodyHtml += `
+          <div class="wizard-step" style="margin-top:16px;">
+            <h3 class="step-title">Arrival details</h3>
+            <div class="grid2">
+              <div>
+                <label>Arrival timing</label>
+                <div class="grid2">
+                  <button id="arrivalNowBtn" class="action-btn primary">Check In Now</button>
+                  <button id="arrivalCustomBtn" class="action-btn gray">Use Custom Time</button>
+                </div>
+              </div>
+              <div>
+                <label>Late status</label>
+                <div class="grid2">
+                  <button id="lateNoBtn" class="choice-btn ${!student.checkin.late ? "active" : ""}">Not Late</button>
+                  <button id="lateYesBtn" class="choice-btn ${student.checkin.late ? "active" : ""}">Late</button>
+                </div>
+              </div>
+            </div>
+            <div class="detail-grid" style="margin-top:14px;">
+              <div>
+                <label>Late reason</label>
+                <select id="lateReasonSelect">
+                  <option value="" ${student.checkin.late_reason === "" ? "selected" : ""}>Select</option>
+                  <option value="Traffic" ${student.checkin.late_reason === "Traffic" ? "selected" : ""}>Traffic</option>
+                  <option value="Forgot the time" ${student.checkin.late_reason === "Forgot the time" ? "selected" : ""}>Forgot the time</option>
+                  <option value="Could not find the room" ${student.checkin.late_reason === "Could not find the room" ? "selected" : ""}>Could not find the room</option>
+                  <option value="Disability related" ${student.checkin.late_reason === "Disability related" ? "selected" : ""}>Disability related</option>
+                  <option value="Needed more time to study" ${student.checkin.late_reason === "Needed more time to study" ? "selected" : ""}>Needed more time to study</option>
+                  <option value="Other" ${student.checkin.late_reason === "Other" ? "selected" : ""}>Other</option>
+                </select>
+              </div>
+              <div>
+                <label>Justified late arrival</label>
+                <select id="justifiedLateSelect">
+                  <option value="" ${student.checkin.justified_late === "" ? "selected" : ""}>Select</option>
+                  <option value="yes" ${student.checkin.justified_late === "yes" ? "selected" : ""}>Yes</option>
+                  <option value="no" ${student.checkin.justified_late === "no" ? "selected" : ""}>No</option>
+                </select>
+              </div>
+              <div style="grid-column: 1 / -1; ${student.checkin.late_reason === "Other" ? "" : "display:none;"}" id="lateOtherWrap">
+                <label>Other reason</label>
+                <input id="lateOtherInput" type="text" value="${escapeHtml(student.checkin.late_other_text || "")}" placeholder="Enter other reason" />
+              </div>
+              <div style="grid-column: 1 / -1;">
+                <label>Invigilator notes</label>
+                <textarea id="invigilatorNotesInput">${escapeHtml(student.checkin.invigilator_notes || "")}</textarea>
+              </div>
+            </div>
+            <div class="stats" style="margin-top:14px;">
+              <div class="stat-box"><div class="label">Preview check in time</div><div class="value">${formatDateTime(proposedCheckinTs)}</div></div>
+              <div class="stat-box"><div class="label">Late by clock</div><div class="value">${lateByClock ? "Yes" : "No"}</div></div>
+              <div class="stat-box"><div class="label">Preview start time</div><div class="value">${formatDateTime(previewStart)}</div></div>
+              <div class="stat-box"><div class="label">Preview end time</div><div class="value">${formatDateTime(previewEnd)}</div></div>
+            </div>
+            <div class="grid2" style="margin-top:14px;">
+              <button id="saveArrivalBtn" class="action-btn green">Save Arrival and Continue</button>
+              <button id="resetArrivalBtn" class="action-btn gray">Reset Arrival Fields</button>
+            </div>
+          </div>
+        `;
+      }
 
-    function checkInStudent(id, ts) {
-      updateStudent(id, student => {
-        student.arrival_time = ts;
-        student.started_at = ts;
-        student.finished_at = null;
-        student.current_break_start = null;
-        student.used_break_ms = 0;
-        student.break_events = [];
-        student.alert_10_sent = false;
-        student.alert_1_sent = false;
-        student.break_alert_sent = false;
-        pushHistory(student, `Checked in at ${formatDateTime(ts)}`);
-      });
-      switchScreen("students");
-    }
+      if (step >= 2) {
+        bodyHtml += `
+          <div class="wizard-step" style="margin-top:16px;">
+            <h3 class="step-title">Review accommodations and identification</h3>
+            <div class="grid2">
+              <div>
+                <label>Accommodations</label>
+                <div class="script-box">${renderAccommodationBlock(student)}</div>
+              </div>
+              <div>
+                <label>Check in summary</label>
+                <div class="script-box">
+                  <p><strong>Arrival time:</strong> ${formatDateTime(student.arrival_time)}</p>
+                  <p><strong>Start time used:</strong> ${formatDateTime(student.started_at)}</p>
+                  <p><strong>Time rule:</strong> ${escapeHtml(getFinalTimeRuleText(student))}</p>
+                  <p><strong>Late reason:</strong> ${escapeHtml(student.checkin.late_reason || "Not marked")}${student.checkin.late_reason === "Other" && student.checkin.late_other_text ? ` (${escapeHtml(student.checkin.late_other_text)})` : ""}</p>
+                </div>
+              </div>
+            </div>
+            <div class="touch-check-grid" style="margin-top:14px;">
+              <button id="cardSeenBtn" class="touch-check ${student.checkin.card_seen ? "active" : ""}">
+                <span>I have seen the student's card</span>
+                <span class="touch-box">${student.checkin.card_seen ? "✓" : ""}</span>
+              </button>
+              <button id="studentSeenBtn" class="touch-check ${student.checkin.student_seen ? "active" : ""}">
+                <span>I have visually confirmed the student</span>
+                <span class="touch-box">${student.checkin.student_seen ? "✓" : ""}</span>
+              </button>
+              <button id="lockerTakenBtn" class="touch-check ${student.checkin.locker_taken ? "active" : ""}">
+                <span>The student took a locker</span>
+                <span class="touch-box">${student.checkin.locker_taken ? "✓" : ""}</span>
+              </button>
+            </div>
+            <div id="lockerPickerWrap" style="margin-top:14px; ${student.checkin.locker_taken ? "" : "display:none;"}">
+              <label>Select locker number</label>
+              <div class="locker-grid" id="lockerGrid"></div>
+            </div>
+            <div class="grid2" style="margin-top:14px;">
+              <button id="backToArrivalBtn" class="action-btn gray">Back to Arrival</button>
+              <button id="continueToConfirmBtn" class="action-btn primary">Continue to Confirmation</button>
+            </div>
+          </div>
+        `;
+      }
 
-    function startBreak(id) {
-      updateStudent(id, student => {
-        if (!student.started_at || student.finished_at || student.current_break_start) return;
-        if (student.break_type === "none") {
-          alert("This student has no break allocation.");
-          return;
-        }
-        if (getRemainingBreakMs(student) <= 0) {
-          alert("No break time remains.");
-          return;
-        }
-        student.current_break_start = Date.now();
-        pushHistory(student, "Break started");
-      });
-    }
+      if (step >= 3) {
+        bodyHtml += `
+          <div class="wizard-step" style="margin-top:16px;">
+            <h3 class="step-title">Final confirmation with student</h3>
+            <div class="script-box">
+              <p>Please review the following with the student:</p>
+              <p>We have confirmed your identity, your exam details, your listed accommodations, your break entitlements, and the timing rules that apply to your arrival today.</p>
+              <p>Please confirm that the information reviewed with you is correct before you sign.</p>
+            </div>
+            <div class="grid2" style="margin-top:14px;">
+              <button id="backToReviewBtn" class="action-btn gray">Back to Review</button>
+              <button id="openSignatureBtn" class="action-btn green">Give to Student for Signature</button>
+            </div>
+          </div>
+        `;
+      }
 
-    function endBreak(id) {
-      updateStudent(id, student => {
-        if (!student.current_break_start) return;
-        const duration = Date.now() - student.current_break_start;
-        student.used_break_ms += duration;
-        student.break_events.push({
-          start: student.current_break_start,
-          end: Date.now(),
-          duration_ms: duration
+      if (student.checkin.completed) {
+        bodyHtml += `
+          <div class="wizard-step" style="margin-top:16px; background:#ecfdf5; border-color:#86efac;">
+            <h3 class="step-title">Check in completed</h3>
+            <p><strong>Signed at:</strong> ${formatDateTime(student.checkin.signed_at)}</p>
+            <p><strong>Locker:</strong> ${student.checkin.locker_taken ? escapeHtml(student.checkin.locker_number || "Selected") : "No locker"}</p>
+            <p><strong>Final end time:</strong> ${formatDateTime(getExamEndMs(student))}</p>
+          </div>
+        `;
+      }
+
+      checkinDetails.innerHTML = bodyHtml;
+
+      if (step <= 1) {
+        const arrivalNowBtn = document.getElementById("arrivalNowBtn");
+        const arrivalCustomBtn = document.getElementById("arrivalCustomBtn");
+        const lateNoBtn = document.getElementById("lateNoBtn");
+        const lateYesBtn = document.getElementById("lateYesBtn");
+        const lateReasonSelect = document.getElementById("lateReasonSelect");
+        const justifiedLateSelect = document.getElementById("justifiedLateSelect");
+        const invigilatorNotesInput = document.getElementById("invigilatorNotesInput");
+        const saveArrivalBtn = document.getElementById("saveArrivalBtn");
+        const resetArrivalBtn = document.getElementById("resetArrivalBtn");
+        const lateOtherInput = document.getElementById("lateOtherInput");
+
+        arrivalNowBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          customCheckinTime.value = new Date().toISOString().slice(0,16);
+          renderCheckin();
         });
-        student.current_break_start = null;
-        student.break_alert_sent = false;
-        pushHistory(student, `Break ended after ${formatClock(duration)}`);
-      });
-    }
 
-    function finishExam(id) {
-      const ok = confirm("Confirm that this student has finished the exam.");
-      if (!ok) return;
+        arrivalCustomBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          customCheckinTime.focus();
+        });
 
-      updateStudent(id, student => {
-        if (student.current_break_start) {
-          const duration = Date.now() - student.current_break_start;
-          student.used_break_ms += duration;
-          student.break_events.push({
-            start: student.current_break_start,
-            end: Date.now(),
-            duration_ms: duration
+        lateNoBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          updateStudent(student.id, next => {
+            next.checkin.late = false;
+            next.checkin.late_reason = "";
+            next.checkin.late_other_text = "";
+            next.checkin.justified_late = "";
           });
-          student.current_break_start = null;
+        });
+
+        lateYesBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          updateStudent(student.id, next => {
+            next.checkin.late = true;
+          });
+        });
+
+        lateReasonSelect?.addEventListener("change", e => {
+          updateStudent(student.id, next => {
+            next.checkin.late_reason = e.target.value;
+            if (e.target.value !== "Other") next.checkin.late_other_text = "";
+          });
+        });
+
+        justifiedLateSelect?.addEventListener("change", e => {
+          updateStudent(student.id, next => {
+            next.checkin.justified_late = e.target.value;
+          });
+        });
+
+        invigilatorNotesInput?.addEventListener("input", e => {
+          updateStudent(student.id, next => {
+            next.checkin.invigilator_notes = e.target.value;
+          });
+        });
+
+        lateOtherInput?.addEventListener("input", e => {
+          updateStudent(student.id, next => {
+            next.checkin.late_other_text = e.target.value;
+          });
+        });
+
+        saveArrivalBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          const ts = toTimestamp(customCheckinTime.value) || Date.now();
+          const late = student.checkin.late;
+          if (late && !student.checkin.late_reason) {
+            alert("Select a late reason.");
+            return;
+          }
+          if (late && student.checkin.late_reason === "Other" && !String(student.checkin.late_other_text || "").trim()) {
+            alert("Enter the other late reason.");
+            return;
+          }
+          if (late && !student.checkin.justified_late) {
+            alert("Select whether the late arrival is justified.");
+            return;
+          }
+          updateStudent(student.id, next => {
+            next.arrival_time = ts;
+            next.checkin.late = late || isLateByClock(next, ts);
+            if (!next.checkin.late) {
+              next.started_at = next.scheduled_start ? Math.max(ts, next.scheduled_start) : ts;
+              next.checkin.confirmed_time_basis = "standard";
+            } else if (next.checkin.justified_late === "yes") {
+              next.started_at = ts;
+              next.checkin.confirmed_time_basis = "justified_late";
+            } else {
+              next.started_at = next.scheduled_start ? next.scheduled_start : ts;
+              next.checkin.confirmed_time_basis = "unjustified_late";
+            }
+            next.finished_at = null;
+            next.current_break_start = null;
+            next.used_break_ms = 0;
+            next.break_events = [];
+            next.alert_10_sent = false;
+            next.alert_1_sent = false;
+            next.break_alert_sent = false;
+            next.checkin.step = 2;
+            pushHistory(next, `Arrival saved at ${formatDateTime(ts)}`);
+          });
+          setTimeout(() => checkinDetails.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+        });
+
+        resetArrivalBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          customCheckinTime.value = "";
+          updateStudent(student.id, next => {
+            next.arrival_time = null;
+            next.started_at = null;
+            next.checkin.late = false;
+            next.checkin.late_reason = "";
+            next.checkin.late_other_text = "";
+            next.checkin.justified_late = "";
+            next.checkin.invigilator_notes = "";
+            next.checkin.confirmed_time_basis = "";
+            next.checkin.step = 1;
+          });
+        });
+      }
+
+      if (step >= 2) {
+        const cardSeenBtn = document.getElementById("cardSeenBtn");
+        const studentSeenBtn = document.getElementById("studentSeenBtn");
+        const lockerTakenBtn = document.getElementById("lockerTakenBtn");
+        const backToArrivalBtn = document.getElementById("backToArrivalBtn");
+        const continueToConfirmBtn = document.getElementById("continueToConfirmBtn");
+        const lockerGrid = document.getElementById("lockerGrid");
+
+        if (lockerGrid) {
+          lockerGrid.innerHTML = Array.from({ length: 40 }, (_, i) => i + 1).map(num => {
+            const active = String(student.checkin.locker_number) === String(num);
+            return `<button class="locker-btn ${active ? "active" : ""}" data-locker="${num}">${num}</button>`;
+          }).join("");
+          lockerGrid.querySelectorAll("[data-locker]").forEach(btn => {
+            btn.addEventListener("click", e => {
+              withPressedState(e.currentTarget);
+              updateStudent(student.id, next => {
+                next.checkin.locker_number = e.currentTarget.dataset.locker;
+              });
+            });
+          });
         }
-        student.finished_at = Date.now();
-        pushHistory(student, "Exam marked finished");
+
+        cardSeenBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          updateStudent(student.id, next => {
+            next.checkin.card_seen = !next.checkin.card_seen;
+          });
+        });
+
+        studentSeenBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          updateStudent(student.id, next => {
+            next.checkin.student_seen = !next.checkin.student_seen;
+          });
+        });
+
+        lockerTakenBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          updateStudent(student.id, next => {
+            next.checkin.locker_taken = !next.checkin.locker_taken;
+            if (!next.checkin.locker_taken) next.checkin.locker_number = "";
+          });
+        });
+
+        backToArrivalBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          updateStudent(student.id, next => {
+            next.checkin.step = 1;
+          });
+        });
+
+        continueToConfirmBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          if (!student.checkin.card_seen) {
+            alert("Confirm that you have seen the student's card.");
+            return;
+          }
+          if (!student.checkin.student_seen) {
+            alert("Confirm that you have seen the student.");
+            return;
+          }
+          if (student.checkin.locker_taken && !student.checkin.locker_number) {
+            alert("Select a locker number.");
+            return;
+          }
+          updateStudent(student.id, next => {
+            next.checkin.step = 3;
+          });
+          setTimeout(() => checkinDetails.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+        });
+      }
+
+      if (step >= 3) {
+        const backToReviewBtn = document.getElementById("backToReviewBtn");
+        const openSignatureBtn = document.getElementById("openSignatureBtn");
+
+        backToReviewBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          updateStudent(student.id, next => {
+            next.checkin.step = 2;
+          });
+        });
+
+        openSignatureBtn?.addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          openSignatureForStudent(student.id);
+        });
+      }
+    }
+
+    function openSignatureForStudent(studentId) {
+      const student = getStudentById(studentId);
+      if (!student) return;
+      signatureStudentId = studentId;
+      signatureHasInk = false;
+      signatureIntro.textContent = `${student.student_name}, please review the statement below and sign inside the box.`;
+      signatureScriptBox.innerHTML = `
+        <p>I confirm that I have reviewed my exam information, timing rules, accommodations, break allowances, and any locker assignment shown to me. I confirm that the information reviewed with me is correct.</p>
+        <p><strong>Accommodations reviewed:</strong></p>
+        ${renderAccommodationBlock(student)}
+      `;
+      signaturePage.classList.add("active");
+      resizeSignatureCanvas();
+      clearSignatureCanvas();
+      updateStudent(studentId, next => {
+        next.checkin.step = 4;
       });
     }
 
-    function setField(id, field, value) {
-      updateStudent(id, student => {
-        student[field] = value;
+    function closeSignaturePage() {
+      signaturePage.classList.remove("active");
+      signatureStudentId = null;
+      renderAll();
+    }
+
+    function resizeSignatureCanvas() {
+      const rect = signatureCanvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      signatureCanvas.width = Math.floor(rect.width * ratio);
+      signatureCanvas.height = Math.floor(rect.height * ratio);
+      signatureCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      signatureCtx.lineWidth = 2.5;
+      signatureCtx.lineCap = "round";
+      signatureCtx.lineJoin = "round";
+      signatureCtx.strokeStyle = "#111827";
+    }
+
+    function clearSignatureCanvas() {
+      signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+      signatureHasInk = false;
+    }
+
+    function canvasPointFromEvent(event) {
+      const rect = signatureCanvas.getBoundingClientRect();
+      let clientX = 0;
+      let clientY = 0;
+      if (event.touches && event.touches[0]) {
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+      } else {
+        clientX = event.clientX;
+        clientY = event.clientY;
+      }
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDrawing(event) {
+      event.preventDefault();
+      drawing = true;
+      lastPoint = canvasPointFromEvent(event);
+    }
+
+    function draw(event) {
+      if (!drawing) return;
+      event.preventDefault();
+      const point = canvasPointFromEvent(event);
+      signatureCtx.beginPath();
+      signatureCtx.moveTo(lastPoint.x, lastPoint.y);
+      signatureCtx.lineTo(point.x, point.y);
+      signatureCtx.stroke();
+      lastPoint = point;
+      signatureHasInk = true;
+    }
+
+    function stopDrawing(event) {
+      if (!drawing) return;
+      event.preventDefault();
+      drawing = false;
+      lastPoint = null;
+    }
+
+    function completeCheckinWithSignature() {
+      if (!signatureStudentId) return;
+      if (!signatureHasInk) {
+        alert("Please sign in the signature box first.");
+        return;
+      }
+      const dataUrl = signatureCanvas.toDataURL("image/png");
+      updateStudent(signatureStudentId, next => {
+        next.checkin.signature_data_url = dataUrl;
+        next.checkin.signed_at = Date.now();
+        next.checkin.completed = true;
+        next.checkin.step = 5;
+        pushHistory(next, "Student signed and check in completed");
       });
+      closeSignaturePage();
+      switchScreen("students");
     }
 
     function renderCheckout() {
@@ -1110,7 +1794,10 @@
           <button class="action-btn red" data-action="finish" style="width:100%; margin-top:14px;" ${!student.started_at || student.finished_at ? "disabled" : ""}>Finish exam</button>
         `;
 
-        card.querySelector('[data-action="finish"]').addEventListener("click", () => finishExam(student.id));
+        card.querySelector('[data-action="finish"]').addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          finishExam(student.id);
+        });
         ["completion_collected_by", "completion_materials_returned", "professor_notified", "completion_notes"].forEach(field => {
           const el = card.querySelector(`[data-field="${field}"]`);
           el.addEventListener(field === "completion_notes" ? "input" : "change", e => setField(student.id, field, e.target.value));
@@ -1145,7 +1832,6 @@
         const status = getStatus(student);
         const examRemaining = getTimeRemainingMs(student);
         const breakRemaining = getRemainingBreakMs(student);
-        const onBreak = !!student.current_break_start;
 
         const card = document.createElement("div");
         card.className = "student-card";
@@ -1158,6 +1844,7 @@
                 <span class="pill">${escapeHtml(student.course_code)}</span>
                 <span class="pill">${escapeHtml(student.lecture_section)}</span>
                 <span class="pill ${status === "finished" ? "green" : status === "on_break" ? "amber" : status === "not_checked_in" ? "red" : ""}">${escapeHtml(status.replaceAll("_", " "))}</span>
+                <span class="pill ${student.checkin.completed ? "green" : "red"}">${student.checkin.completed ? "Check in complete" : "Check in incomplete"}</span>
               </div>
             </div>
             <div class="pill-row">
@@ -1232,8 +1919,14 @@
           </div>
         `;
 
-        card.querySelector('[data-action="start-break"]').addEventListener("click", () => startBreak(student.id));
-        card.querySelector('[data-action="end-break"]').addEventListener("click", () => endBreak(student.id));
+        card.querySelector('[data-action="start-break"]').addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          startBreak(student.id);
+        });
+        card.querySelector('[data-action="end-break"]').addEventListener("click", e => {
+          withPressedState(e.currentTarget);
+          endBreak(student.id);
+        });
         breakList.appendChild(card);
       });
     }
@@ -1259,6 +1952,64 @@
           <div><strong>${escapeHtml(note.text)}</strong></div>
         `;
         notificationList.appendChild(card);
+      });
+    }
+
+    function setField(id, field, value) {
+      updateStudent(id, student => {
+        student[field] = value;
+      });
+    }
+
+    function startBreak(id) {
+      updateStudent(id, student => {
+        if (!student.started_at || student.finished_at || student.current_break_start) return;
+        if (student.break_type === "none") {
+          alert("This student has no break allocation.");
+          return;
+        }
+        if (getRemainingBreakMs(student) <= 0) {
+          alert("No break time remains.");
+          return;
+        }
+        student.current_break_start = Date.now();
+        pushHistory(student, "Break started");
+      });
+    }
+
+    function endBreak(id) {
+      updateStudent(id, student => {
+        if (!student.current_break_start) return;
+        const duration = Date.now() - student.current_break_start;
+        student.used_break_ms += duration;
+        student.break_events.push({
+          start: student.current_break_start,
+          end: Date.now(),
+          duration_ms: duration
+        });
+        student.current_break_start = null;
+        student.break_alert_sent = false;
+        pushHistory(student, `Break ended after ${formatClock(duration)}`);
+      });
+    }
+
+    function finishExam(id) {
+      const ok = confirm("Confirm that this student has finished the exam.");
+      if (!ok) return;
+
+      updateStudent(id, student => {
+        if (student.current_break_start) {
+          const duration = Date.now() - student.current_break_start;
+          student.used_break_ms += duration;
+          student.break_events.push({
+            start: student.current_break_start,
+            end: Date.now(),
+            duration_ms: duration
+          });
+          student.current_break_start = null;
+        }
+        student.finished_at = Date.now();
+        pushHistory(student, "Exam marked finished");
       });
     }
 
@@ -1303,16 +2054,26 @@
       renderAll();
     }
 
+    document.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("mousedown", () => withPressedState(btn));
+      btn.addEventListener("touchstart", () => withPressedState(btn), { passive: true });
+    });
+
     document.querySelectorAll("[data-screen]").forEach(btn => {
       btn.addEventListener("click", () => switchScreen(btn.dataset.screen));
     });
 
-    document.getElementById("reloadCsvBtn").addEventListener("click", loadStudentsFromCsv);
-    document.getElementById("silenceNotificationsBtn").addEventListener("click", () => {
+    document.getElementById("reloadCsvBtn").addEventListener("click", e => {
+      withPressedState(e.currentTarget);
+      loadStudentsFromCsv();
+    });
+    document.getElementById("silenceNotificationsBtn").addEventListener("click", e => {
+      withPressedState(e.currentTarget);
       notificationsSilenced = true;
       applyFlashingNotifications();
     });
-    document.getElementById("unsilenceNotificationsBtn").addEventListener("click", () => {
+    document.getElementById("unsilenceNotificationsBtn").addEventListener("click", e => {
+      withPressedState(e.currentTarget);
       notificationsSilenced = false;
       applyFlashingNotifications();
     });
@@ -1322,6 +2083,37 @@
     checkoutFilter.addEventListener("change", renderCheckout);
     studentSearch.addEventListener("input", renderStudents);
     studentStatusFilter.addEventListener("change", renderStudents);
+
+    clearSignatureBtn.addEventListener("click", e => {
+      withPressedState(e.currentTarget);
+      clearSignatureCanvas();
+    });
+    cancelSignatureBtn.addEventListener("click", e => {
+      withPressedState(e.currentTarget);
+      closeSignaturePage();
+    });
+    confirmSignatureBtn.addEventListener("click", e => {
+      withPressedState(e.currentTarget);
+      completeCheckinWithSignature();
+    });
+
+    signatureCanvas.addEventListener("mousedown", startDrawing);
+    signatureCanvas.addEventListener("mousemove", draw);
+    signatureCanvas.addEventListener("mouseup", stopDrawing);
+    signatureCanvas.addEventListener("mouseleave", stopDrawing);
+    signatureCanvas.addEventListener("touchstart", startDrawing, { passive: false });
+    signatureCanvas.addEventListener("touchmove", draw, { passive: false });
+    signatureCanvas.addEventListener("touchend", stopDrawing, { passive: false });
+    signatureCanvas.addEventListener("touchcancel", stopDrawing, { passive: false });
+    window.addEventListener("resize", () => {
+      if (signaturePage.classList.contains("active")) {
+        const saved = signatureCanvas.toDataURL();
+        resizeSignatureCanvas();
+        const img = new Image();
+        img.onload = () => signatureCtx.drawImage(img, 0, 0, signatureCanvas.clientWidth, signatureCanvas.clientHeight);
+        img.src = saved;
+      }
+    });
 
     loadStudentsFromCsv();
     setInterval(tick, 1000);
